@@ -25,10 +25,9 @@
   },
   "homepage": "https://github.com/tristen/hcl-picker#readme",
   "devDependencies": {
-    "browserify": "^13.0.0",
-    "budo": "^8.1.0",
-    "eslint": "^2.7.0",
-    "uglify-js": "^2.6.2"
+    "browserify": "^16.5.1",
+    "budo": "^11.6.3",
+    "uglify-js": "^3.8.1"
   },
   "dependencies": {
     "chroma-js": "^2.1.0",
