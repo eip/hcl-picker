@@ -97,7 +97,6 @@ Colorpicker.prototype = {
       const clippedArr = new Uint8Array(clippedBuf);
       clippedArr.set([255, 0, 0, 0]);
 
-
       for (let x = 0; x < sq; x++) {
         for (let y = 0; y < sq; y++) {
           const idx = (x + y * sq) * 4;
@@ -202,19 +201,19 @@ Colorpicker.prototype = {
     function showGradient() {
       // draw line
       const colors = []; let col;
-      const toX = (v, dim) => Math.round(((v - dim[2]) / (dim[3] - dim[2])) * options.sq * options.scale) - 0.5;
+      const toX = (v, dim) => Math.round(((v - dim[2]) / (dim[3] - dim[2])) * options.sq * options.scale);
 
       const a = options.handleSize;
       const b = Math.floor(options.handleSize * 0.65);
-      const x0 = toX(options.from[0], options.xdim) + 10;
-      const x1 = toX(options.to[0], options.xdim) + 10;
-      const y0 = toX(options.from[1], options.ydim) + 10;
-      const y1 = toX(options.to[1], options.ydim) + 10;
+      const x0 = toX(options.from[0], options.xdim) + a;
+      const x1 = toX(options.to[0], options.xdim) + a;
+      const y0 = toX(options.from[1], options.ydim) + a;
+      const y1 = toX(options.to[1], options.ydim) + a;
       let fx; let fy; let x; let
         y;
 
       const ctx = gradctx;
-      ctx.clearRect(0, 0, 600, 600);
+      ctx.clearRect(0, 0, 450, 450);
 
       if (!initPosSet) {
         d3.select('.drag.from').style({
@@ -240,7 +239,7 @@ Colorpicker.prototype = {
       ctx.strokeStyle = '#fff';
       const colF = getColor(options.from[0], options.from[1]).hex();
       ctx.fillStyle = colF;
-      ctx.arc(x0, y0, a, 0, Math.PI * 2);
+      ctx.arc(x0, y0, a-1, 0, Math.PI * 2);
       ctx.fill();
       ctx.closePath();
       ctx.stroke();
@@ -249,7 +248,7 @@ Colorpicker.prototype = {
       ctx.beginPath();
       const colT = getColor(options.to[0], options.to[1]).hex();
       ctx.fillStyle = colT;
-      ctx.arc(x1, y1, a, 0, Math.PI * 2);
+      ctx.arc(x1, y1, a-1, 0, Math.PI * 2);
       ctx.fill();
       ctx.closePath();
       ctx.stroke();
@@ -259,8 +258,8 @@ Colorpicker.prototype = {
       for (let i = 1; i < options.steps - 1; i++) {
         fx = options.from[0] + (i / (options.steps - 1)) * (options.to[0] - options.from[0]);
         fy = options.from[1] + (i / (options.steps - 1)) * (options.to[1] - options.from[1]);
-        x = toX(fx, options.xdim[2]) + 10;
-        y = toX(fy, options.ydim[2]) + 10;
+        x = toX(fx, options.xdim) + a;
+        y = toX(fy, options.ydim) + a;
 
         ctx.beginPath();
         ctx.strokeStyle = 'rgba(255,255,255,0.25)';
@@ -317,9 +316,9 @@ Colorpicker.prototype = {
         let posY = parseInt(d3.select(this).style('top').split('px')[0], 10);
 
         // 440 = width of container. 30 = width of drag circle.
-        posX = Math.max(0, Math.min(440 - 30, posX + d3.event.dx));
+        posX = Math.max(0, Math.min(450 - 30, posX + d3.event.dx));
         // 440 = height of container. 30 = height of drag circle.
-        posY = Math.max(0, Math.min(440 - 30, posY + d3.event.dy));
+        posY = Math.max(0, Math.min(450 - 30, posY + d3.event.dy));
 
         d3.select(this).style({
           left: `${posX}px`,
@@ -327,10 +326,8 @@ Colorpicker.prototype = {
         });
 
         const from = d3.select(this).classed('from');
-        const x = posX + options.handleSize - 10;
-        const y = posY + options.handleSize - 10;
-        let xv = (x / (options.sq * options.scale)) * (options.xdim[3] - options.xdim[2]) + options.xdim[2];
-        let yv = (y / (options.sq * options.scale)) * (options.ydim[3] - options.ydim[2]) + options.ydim[2];
+        let xv = (posX / (options.sq * options.scale)) * (options.xdim[3] - options.xdim[2]) + options.xdim[2];
+        let yv = (posY / (options.sq * options.scale)) * (options.ydim[3] - options.ydim[2]) + options.ydim[2];
 
         xv = Math.min(options.xdim[3], Math.max(options.xdim[2], xv));
         yv = Math.min(options.ydim[3], Math.max(options.ydim[2], yv));
