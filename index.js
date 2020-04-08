@@ -110,16 +110,18 @@ Colorpicker.prototype = {
 
           color = getColor(xv, yv);
           if (color.clipped()) {
-            imdata.data[idx] = 255;
-            imdata.data[idx + 1] = 0;
-            imdata.data[idx + 2] = 0;
-            imdata.data[idx + 3] = 0;
+            // imdata.data[idx] = 255;
+            // imdata.data[idx + 1] = 0;
+            // imdata.data[idx + 2] = 0;
+            // imdata.data[idx + 3] = 0;
+            imdata.data.set([255, 0, 0, 0], idx);
           } else {
             const rgb = color.rgb();
-            imdata.data[idx] = rgb[0];
-            imdata.data[idx + 1] = rgb[1];
-            imdata.data[idx + 2] = rgb[2];
-            imdata.data[idx + 3] = 255;
+            // imdata.data[idx] = rgb[0];
+            // imdata.data[idx + 1] = rgb[1];
+            // imdata.data[idx + 2] = rgb[2];
+            // imdata.data[idx + 3] = 255;
+            imdata.data.set([...rgb, 255], idx);
           }
         }
       }
@@ -128,9 +130,7 @@ Colorpicker.prototype = {
     }
 
     function updateAxis(axis) {
-      options.x = axis[0];
-      options.y = axis[1];
-      options.z = axis[2];
+      [options.x, options.y, options.z] = axis;
 
       for (let i = 0; i < options.colorspace.dimensions.length; i++) {
         const dim = options.colorspace.dimensions[i];
@@ -313,7 +313,7 @@ Colorpicker.prototype = {
 
     const drag = d3.behavior.drag()
       .origin(Object)
-      .on('drag', () => {
+      .on('drag', function dragHandler() {
         initPosSet = true;
 
         let posX = parseInt(d3.select(this).style('left').split('px')[0], 10);
