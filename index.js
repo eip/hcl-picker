@@ -1,18 +1,19 @@
 'use strict';
-/*eslint-disable no-new */
 
-var clipboard = require('clipboard');
-var extend = require('xtend');
-var chroma = require('chroma-js');
-var d3 = require('d3');
+/* eslint-disable no-new */
+
+const Clipboard = require('clipboard');
+const extend = require('xtend');
+const chroma = require('chroma-js');
+const d3 = require('d3');
 d3.geo = require('d3-geo').geo;
 
 function autoscale(canvas) {
-  var ctx = canvas.getContext('2d');
-  var ratio = window.devicePixelRatio || 1;
+  const ctx = canvas.getContext('2d');
+  const ratio = window.devicePixelRatio || 1;
   if (ratio !== 1) {
-    canvas.style.width = canvas.width + 'px';
-    canvas.style.height = canvas.height + 'px';
+    canvas.style.width = `${canvas.width}px`;
+    canvas.style.height = `${canvas.height}px`;
     canvas.width *= ratio;
     canvas.height *= ratio;
     ctx.scale(ratio, ratio);
@@ -21,7 +22,7 @@ function autoscale(canvas) {
 }
 
 function unserialize(hash) {
-  var parts = hash.split('/');
+  const parts = hash.split('/');
   return {
     axis: parts[0],
     steps: Number(parts[1]),
@@ -31,7 +32,7 @@ function unserialize(hash) {
 }
 
 function Colorpicker(options) {
-  var defaults = {
+  const defaults = {
     sq: 210,
     scale: 2,
     handleSize: 15,
@@ -55,13 +56,13 @@ function Colorpicker(options) {
     to: chroma(0xbf6992)
   };
 
-  var hash = location.hash.slice(1) ? unserialize(location.hash.slice(1)) : {};
+  const hash = window.location.hash.slice(1) ? unserialize(window.location.hash.slice(1)) : {};
   this.init(extend(defaults, options, hash));
 }
 
 Colorpicker.prototype = {
-  init: function(options) {
-    var initPosSet = false;
+  init(options) {
+    let initPosSet = false;
     updateAxis(options.axis);
     options.zval = options.from.hcl()[options.dz];
     options.from = getXY(options.from);
@@ -78,27 +79,27 @@ Colorpicker.prototype = {
     }
 
     function getColor(x, y) {
-      var xyz = [];
+      const xyz = [];
       xyz[options.dx] = x;
       xyz[options.dy] = y;
-      if (typeof options.zval == 'string') {
+      if (typeof options.zval === 'string') {
         xyz[options.dz] = parseFloat(options.zval);
       } else {
         xyz[options.dz] = options.zval;
       }
-      var c = chroma.hcl(xyz);
+      const c = chroma.hcl(xyz);
       return c;
     }
 
-    var colorctx = getctx('colorspace');
+    const colorctx = getctx('colorspace');
 
     function renderColorSpace() {
-      var x, y, xv, yv, color, idx,
-        xdim = options.xdim,
-        ydim = options.ydim,
-        sq = options.sq,
-        ctx = colorctx,
-        imdata = ctx.createImageData(sq, sq);
+      let x; let y; let xv; let yv; let color; let idx;
+      const {xdim} = options;
+      const {ydim} = options;
+      const {sq} = options;
+      const ctx = colorctx;
+      const imdata = ctx.createImageData(sq, sq);
 
       for (x = 0; x < sq; x++) {
         for (y = 0; y < sq; y++) {
@@ -114,7 +115,7 @@ Colorpicker.prototype = {
             imdata.data[idx + 2] = 0;
             imdata.data[idx + 3] = 0;
           } else {
-            var rgb = color.rgb();
+            const rgb = color.rgb();
             imdata.data[idx] = rgb[0];
             imdata.data[idx + 1] = rgb[1];
             imdata.data[idx + 2] = rgb[2];
@@ -131,8 +132,8 @@ Colorpicker.prototype = {
       options.y = axis[1];
       options.z = axis[2];
 
-      for (var i = 0; i < options.colorspace.dimensions.length; i++) {
-        var dim = options.colorspace.dimensions[i];
+      for (let i = 0; i < options.colorspace.dimensions.length; i++) {
+        const dim = options.colorspace.dimensions[i];
         if (dim[0] === options.x) {
           options.dx = i;
           options.xdim = dim;
@@ -166,30 +167,30 @@ Colorpicker.prototype = {
 
     function getXY(color) {
       // inverse operation to getColor
-      var hcl = color.hcl();
+      const hcl = color.hcl();
       return [hcl[options.dx], hcl[options.dy]];
     }
 
-    var slider = d3.select('#slider');
-    slider.on('mousemove', function() {
-        d3.select('.js-slider-value').text(this.value);
-        options.zval = this.value;
-        renderColorSpace();
-      });
+    const slider = d3.select('#slider');
+    slider.on('mousemove', () => {
+      d3.select('.js-slider-value').text(this.value);
+      options.zval = this.value;
+      renderColorSpace();
+    });
 
     d3.select('.js-add')
-      .on('click', function() {
-        options.steps = options.steps + 1;
+      .on('click', () => {
+        options.steps += 1;
         showGradient();
-    });
+      });
 
     d3.select('.js-subtract')
-      .on('click', function() {
+      .on('click', () => {
         if (options.steps !== 1) {
-          options.steps = options.steps - 1;
+          options.steps -= 1;
           showGradient();
         }
-    });
+      });
 
     function resetGradient() {
       options.from[0] = options.xdim[2] + (options.xdim[3] - options.xdim[2]) * (23 / 36);
@@ -198,35 +199,34 @@ Colorpicker.prototype = {
       options.to[1] = options.ydim[2] + (options.ydim[3] - options.ydim[2]) * 0.8;
     }
 
-    var gradctx = getretinactx('grad');
-    var locationTimer = null;
+    const gradctx = getretinactx('grad');
+    let locationTimer = null;
 
     function showGradient() {
       // draw line
-      var colors = [], col_f, col_t, col;
-      var toX = function(v, dim) {
-        return Math.round((v - dim[2]) / (dim[3] - dim[2]) * options.sq * options.scale) - 0.5;
-      };
+      const colors = []; let col;
+      const toX = (v, dim) => Math.round(((v - dim[2]) / (dim[3] - dim[2])) * options.sq * options.scale) - 0.5;
 
-      var a = options.handleSize;
-      var b = Math.floor(options.handleSize * 0.65);
-      var x0 = toX(options.from[0], options.xdim) + 10;
-      var x1 = toX(options.to[0], options.xdim) + 10;
-      var y0 = toX(options.from[1], options.ydim) + 10;
-      var y1 = toX(options.to[1], options.ydim) + 10;
-      var fx, fy, x, y;
+      const a = options.handleSize;
+      const b = Math.floor(options.handleSize * 0.65);
+      const x0 = toX(options.from[0], options.xdim) + 10;
+      const x1 = toX(options.to[0], options.xdim) + 10;
+      const y0 = toX(options.from[1], options.ydim) + 10;
+      const y1 = toX(options.to[1], options.ydim) + 10;
+      let fx; let fy; let x; let
+        y;
 
-      var ctx = gradctx;
+      const ctx = gradctx;
       ctx.clearRect(0, 0, 600, 600);
 
       if (!initPosSet) {
         d3.select('.drag.from').style({
-          left: (x0 - a) + 'px',
-          top: (y0 - a) + 'px'
+          left: `${x0 - a}px`,
+          top: `${y0 - a}px`
         });
         d3.select('.drag.to').style({
-          left: (x1 - a) + 'px',
-          top: (y1 - a) + 'px'
+          left: `${x1 - a}px`,
+          top: `${y1 - a}px`
         });
       }
 
@@ -241,8 +241,8 @@ Colorpicker.prototype = {
       // `from` drag control on the colorpicker.
       ctx.beginPath();
       ctx.strokeStyle = '#fff';
-      col_f = getColor(options.from[0], options.from[1]).hex();
-      ctx.fillStyle = col_f;
+      const colF = getColor(options.from[0], options.from[1]).hex();
+      ctx.fillStyle = colF;
       ctx.arc(x0, y0, a, 0, Math.PI * 2);
       ctx.fill();
       ctx.closePath();
@@ -250,16 +250,16 @@ Colorpicker.prototype = {
 
       // `to` drag control on the colorpicker.
       ctx.beginPath();
-      col_t = getColor(options.to[0], options.to[1]).hex();
-      ctx.fillStyle = col_t;
+      const colT = getColor(options.to[0], options.to[1]).hex();
+      ctx.fillStyle = colT;
       ctx.arc(x1, y1, a, 0, Math.PI * 2);
       ctx.fill();
       ctx.closePath();
       ctx.stroke();
 
-      colors.push(col_f);
+      colors.push(colF);
 
-      for (var i = 1; i < options.steps - 1; i++) {
+      for (let i = 1; i < options.steps - 1; i++) {
         fx = options.from[0] + (i / (options.steps - 1)) * (options.to[0] - options.from[0]);
         fy = options.from[1] + (i / (options.steps - 1)) * (options.to[1] - options.from[1]);
         x = toX(fx, options.xdim[2]) + 10;
@@ -276,27 +276,27 @@ Colorpicker.prototype = {
         ctx.stroke();
       }
 
-      colors.push(col_t);
+      colors.push(colT);
       updateSwatches(colors);
 
       // Update the url hash
       if (locationTimer) clearTimeout(locationTimer);
-      locationTimer = setTimeout(function () {
-        location.href = '#' + serialize();
+      locationTimer = setTimeout(() => {
+        window.location.href = `#${serialize()}`;
         locationTimer = null;
       }, 300);
     }
 
     function updateSwatches(colors) {
-      ['#visual-output', '#legend-output'].forEach(function(id) {
-        var output = d3.select(id).selectAll('div.swatch').data(colors);
+      ['#visual-output', '#legend-output'].forEach(id => {
+        const output = d3.select(id).selectAll('div.swatch').data(colors);
         output.exit().remove();
         output.enter().append('div').attr('class', 'swatch');
         output.style('background', String);
       });
 
       if (options.callback) options.callback(colors);
-      var output = d3.select('#code-output')
+      const output = d3.select('#code-output')
         .selectAll('span.value').data(colors);
 
       output.exit().remove();
@@ -305,19 +305,19 @@ Colorpicker.prototype = {
     }
 
     function serialize() {
-      return options.x + options.y + options.z + '/' +
-        options.steps + '/' +
-        getColor(options.from[0], options.from[1]).hex().substr(1) + '/' +
-        getColor(options.to[0], options.to[1]).hex().substr(1);
+      return `${options.x + options.y + options.z}/${
+        options.steps}/${
+        getColor(options.from[0], options.from[1]).hex().substr(1)}/${
+        getColor(options.to[0], options.to[1]).hex().substr(1)}`;
     }
 
-    var drag = d3.behavior.drag()
+    const drag = d3.behavior.drag()
       .origin(Object)
-      .on('drag', function() {
+      .on('drag', () => {
         initPosSet = true;
 
-        var posX = parseInt(d3.select(this).style('left').split('px')[0], 10);
-        var posY = parseInt(d3.select(this).style('top').split('px')[0], 10);
+        let posX = parseInt(d3.select(this).style('left').split('px')[0], 10);
+        let posY = parseInt(d3.select(this).style('top').split('px')[0], 10);
 
         // 440 = width of container. 30 = width of drag circle.
         posX = Math.max(0, Math.min(440 - 30, posX + d3.event.dx));
@@ -325,15 +325,15 @@ Colorpicker.prototype = {
         posY = Math.max(0, Math.min(440 - 30, posY + d3.event.dy));
 
         d3.select(this).style({
-          left: posX + 'px',
-          top: posY + 'px'
+          left: `${posX}px`,
+          top: `${posY}px`
         });
 
-        var from = d3.select(this).classed('from');
-        var x = posX + options.handleSize - 10;
-        var y = posY + options.handleSize - 10;
-        var xv = x / (options.sq * options.scale) * (options.xdim[3] - options.xdim[2]) + options.xdim[2];
-        var yv = y / (options.sq * options.scale) * (options.ydim[3] - options.ydim[2]) + options.ydim[2];
+        const from = d3.select(this).classed('from');
+        const x = posX + options.handleSize - 10;
+        const y = posY + options.handleSize - 10;
+        let xv = (x / (options.sq * options.scale)) * (options.xdim[3] - options.xdim[2]) + options.xdim[2];
+        let yv = (y / (options.sq * options.scale)) * (options.ydim[3] - options.ydim[2]) + options.ydim[2];
 
         xv = Math.min(options.xdim[3], Math.max(options.xdim[2], xv));
         yv = Math.min(options.ydim[3], Math.max(options.ydim[2], yv));
@@ -345,39 +345,28 @@ Colorpicker.prototype = {
         }
 
         showGradient();
-    });
+      });
     d3.select('.drag.to').call(drag);
     d3.select('.drag.from').call(drag);
 
     function axisLinks() {
-      var axis_links = d3.select('.axis-select')
+      const al = d3.select('.axis-select')
         .selectAll('a')
         .data(options.colorspace.axis);
 
-      axis_links.exit().remove();
-      axis_links.enter().append('button')
-        .attr('class', function(d) {
-          return 'axis-option col12 block button uppercase unround keyline-bottom ' + d[0];
-        })
-        .attr('data-tooltip', function(d) {
-            return d[1];
-          }
-        )
-        .classed('active', function(d) {
-          return d[0] == options.axis;
-        })
-        .text(function(d) {
-          return d[0][0] + '–' + d[0][1];
-        })
-        .on('click', function(d) {
+      al.exit().remove();
+      al.enter().append('button')
+        .attr('class', d => `axis-option col12 block button uppercase unround keyline-bottom ${d[0]}`)
+        .attr('data-tooltip', d => d[1])
+        .classed('active', d => d[0] === options.axis)
+        .text(d => `${d[0][0]}–${d[0][1]}`)
+        .on('click', d => {
           initPosSet = false;
           updateAxis(d[0]);
           resetGradient();
           renderColorSpace();
           showGradient();
-          d3.selectAll('.axis-option').classed('active', function(_) {
-            return _[0] == d[0];
-          });
+          d3.selectAll('.axis-option').classed('active', _ => _[0] === d[0]);
         });
     }
 
@@ -387,45 +376,43 @@ Colorpicker.prototype = {
   }
 };
 
-var mode = d3.selectAll('.js-mode');
-var vizs = d3.select('#visualization');
-var pick = d3.select('#picker');
-var select = d3.select('.js-select');
+const mode = d3.selectAll('.js-mode');
+const vizs = d3.select('#visualization');
+const pick = d3.select('#picker');
+const select = d3.select('.js-select');
 
-var path = d3.geo.path()
+const path = d3.geo.path()
   .projection(d3.geo.albersUsa()
     .scale(960)
     .translate([480, 265]));
 
-var svg = vizs.append('svg:svg')
+const svg = vizs.append('svg:svg')
   .attr('width', 960)
   .attr('height', 500);
 
-var counties = svg.append('svg:g').attr('id', 'counties');
+const counties = svg.append('svg:g').attr('id', 'counties');
 
-function choropleth(counties, colors) {
-  var pad = d3.format('05d');
-  d3.json('example-data/unemployment.json', function(data) {
-    var quantize = d3.scale.quantile().domain(d3.values(data)).range(d3.range(colors.length));
-    d3.json('example-data/us-counties.json', function(json) {
-      counties.selectAll('path').data(json.features).enter().append('svg:path').attr('style', function(d) {
-          return 'fill:' + colors[quantize(data[pad(d.id)])] + ';';
-        })
-        .attr('d', path).append('svg:title').text(function(d) {
-          return d.properties.name + ': ' + data[pad(d.id)] + '%';
-        });
+function choropleth(colors) {
+  const pad = d3.format('05d');
+  d3.json('example-data/unemployment.json', data => {
+    const quantize = d3.scale.quantile().domain(d3.values(data)).range(d3.range(colors.length));
+    d3.json('example-data/us-counties.json', json => {
+      counties.selectAll('path').data(json.features).enter().append('svg:path').attr('style', d => `fill:${colors[quantize(data[pad(d.id)])]};`)
+        .attr('d', path)
+        .append('svg:title')
+        .text(d => `${d.properties.name}: ${data[pad(d.id)]}%`);
       d3.select('#visualization').classed('loading', false);
     });
   });
 }
 
-var colorArray = [];
-var clipboardEl = d3.select('#select');
-clipboard = new clipboard('#select');
+let colorArray = [];
+const clipboardEl = d3.select('#select');
+const clipboard = new Clipboard('#select');
 
-clipboard.on('success', function() {
+clipboard.on('success', () => {
   clipboardEl.text('Copied!');
-  window.setTimeout(function() {
+  window.setTimeout(() => {
     clipboardEl.text('Copy')
       .append('span')
       .attr('class', 'sprite icon clipboard');
@@ -433,14 +420,14 @@ clipboard.on('success', function() {
 });
 
 new Colorpicker({
-  callback: function(colors) {
+  callback(colors) {
     colorArray = colors;
     select.attr('data-clipboard-text', colors);
   }
 });
 
-mode.on('click', function() {
-  var el = d3.select(this);
+mode.on('click', function clickHandler() {
+  const el = d3.select(this);
   mode.classed('active', false);
   el.classed('active', true);
 
@@ -451,6 +438,6 @@ mode.on('click', function() {
   } else {
     pick.classed('hidden', true);
     vizs.classed('hidden', false).classed('loading', true);
-    choropleth(counties, colorArray);
+    choropleth(colorArray);
   }
 });
