@@ -79,54 +79,46 @@ Colorpicker.prototype = {
     }
 
     function getColor(x, y) {
-      const xyz = [];
+      const xyz = [0, 0, 0];
       xyz[options.dx] = x;
       xyz[options.dy] = y;
-      if (typeof options.zval === 'string') {
-        xyz[options.dz] = parseFloat(options.zval);
-      } else {
-        xyz[options.dz] = options.zval;
-      }
-      const c = chroma.hcl(xyz);
-      return c;
+      xyz[options.dz] = options.zval;
+      return chroma.hcl(xyz);
     }
 
     const colorctx = getctx('colorspace');
 
     function renderColorSpace() {
-      let x; let y; let xv; let yv; let color; let idx;
-      const {xdim} = options;
-      const {ydim} = options;
-      const {sq} = options;
+      const t0 = performance.now();
+      const { xdim, ydim, sq } = options;
       const ctx = colorctx;
       const imdata = ctx.createImageData(sq, sq);
+      const clippedBuf = new ArrayBuffer(4);
+      const clippedArr = new Uint8Array(clippedBuf);
+      clippedArr.set([255, 0, 0, 0]);
 
-      for (x = 0; x < sq; x++) {
-        for (y = 0; y < sq; y++) {
-          idx = (x + y * imdata.width) * 4;
 
-          xv = xdim[2] + (x / sq) * (xdim[3] - xdim[2]);
-          yv = ydim[2] + (y / sq) * (ydim[3] - ydim[2]);
+      for (let x = 0; x < sq; x++) {
+        for (let y = 0; y < sq; y++) {
+          const idx = (x + y * sq) * 4;
 
-          color = getColor(xv, yv);
+          const xv = xdim[2] + (x / sq) * (xdim[3] - xdim[2]);
+          const yv = ydim[2] + (y / sq) * (ydim[3] - ydim[2]);
+
+          const color = getColor(xv, yv);
+          // const color = chroma(0x35d7e7);
           if (color.clipped()) {
-            // imdata.data[idx] = 255;
-            // imdata.data[idx + 1] = 0;
-            // imdata.data[idx + 2] = 0;
-            // imdata.data[idx + 3] = 0;
-            imdata.data.set([255, 0, 0, 0], idx);
+            imdata.data.set(clippedArr, idx);
           } else {
-            const rgb = color.rgb();
-            // imdata.data[idx] = rgb[0];
-            // imdata.data[idx + 1] = rgb[1];
-            // imdata.data[idx + 2] = rgb[2];
-            // imdata.data[idx + 3] = 255;
-            imdata.data.set([...rgb, 255], idx);
+            imdata.data.set([...color.rgb(), 255], idx);
           }
         }
       }
+      const t1 = performance.now();
       ctx.putImageData(imdata, 0, 0);
       showGradient();
+      const t2 = performance.now();
+      console.log(`renderColorSpace() took ${(t1 - t0)} + ${(t2 - t1)} milliseconds.`);
     }
 
     function updateAxis(axis) {
