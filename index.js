@@ -192,6 +192,11 @@ Colorpicker.prototype = {
         }
       });
 
+    d3.select('.js-reset')
+      .on('click', () => {
+        [window.location.href] = window.location.href.split('#');
+      });
+
     function resetGradient() {
       options.from[0] = options.xdim[2] + (options.xdim[3] - options.xdim[2]) * (23 / 36);
       options.from[1] = options.ydim[2] + (options.ydim[3] - options.ydim[2]) * 0.1;

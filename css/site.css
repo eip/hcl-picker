@@ -293,6 +293,10 @@ input[type=range]::-moz-range-thumb {
   }
 
 .select-all {
+  bottom:82px;
+  }
+
+.controls {
   bottom:41px;
   }
 
