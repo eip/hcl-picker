@@ -164,7 +164,7 @@ Colorpicker.prototype = {
     }
 
     const slider = d3.select('#slider');
-    slider.on('mousemove', () => {
+    slider.on('input', function mousemoveHandler() {
       d3.select('.js-slider-value').text(this.value);
       options.zval = this.value;
       renderColorSpace();
@@ -279,8 +279,8 @@ Colorpicker.prototype = {
       // Update the url hash
       if (locationTimer) clearTimeout(locationTimer);
       locationTimer = setTimeout(() => {
-        window.location.href = `#${serialize()}`;
         locationTimer = null;
+        window.location.href = `#${serialize()}`;
       }, 300);
     }
 
