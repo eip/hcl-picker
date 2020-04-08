@@ -3,7 +3,7 @@
 
 var clipboard = require('clipboard');
 var extend = require('xtend');
-var Color = require('./src/chroma').Color;
+var chroma = require('chroma-js');
 var d3 = require('d3');
 d3.geo = require('d3-geo').geo;
 
@@ -26,8 +26,8 @@ function unserialize(hash) {
     axis: parts[0],
     steps: Number(parts[1]),
     zval: Number(parts[2]),
-    from: new Color(parts[3]),
-    to: new Color(parts[4])
+    from: chroma(parts[3]),
+    to: chroma(parts[4])
   };
 }
 
@@ -40,8 +40,8 @@ function Colorpicker(options) {
     colorspace: {
       dimensions: [
         ['h', 'hue', 0, 360, 0],
-        ['c', 'chroma', 0, 5, 1],
-        ['l', 'lightness', 0, 1.7, 0.6]],
+        ['c', 'chroma', 0, 135, 60],
+        ['l', 'lightness', 0, 100, 50]],
       axis: [
         ['hlc', 'hue-lightness'],
         ['clh', 'chroma-lightness'],
@@ -50,10 +50,10 @@ function Colorpicker(options) {
     x: 'h',
     y: 'l',
     z: 'c',
-    steps: 6,
-    zval: 1,
-    from: new Color('16534C'),
-    to: new Color('E2E062')
+    steps: 3,
+    zval: 50,
+    from: chroma(0x0091e2),
+    to: chroma(0xd36e52)
   };
 
   var hash = location.hash.slice(2) ? unserialize(location.hash.slice(2)) : {};
@@ -86,7 +86,7 @@ Colorpicker.prototype = {
       } else {
         xyz[options.dz] = options.zval;
       }
-      var c = new Color(xyz, 'hcl');
+      var c = chroma.hcl(xyz);
       return c;
     }
 
@@ -107,16 +107,17 @@ Colorpicker.prototype = {
           xv = xdim[2] + (x / sq) * (xdim[3] - xdim[2]);
           yv = ydim[2] + (y / sq) * (ydim[3] - ydim[2]);
 
-          color = getColor(xv, yv).rgb;
-          if (isNaN(color[0])) {
+          color = getColor(xv, yv);
+          if (color.clipped()) {
             imdata.data[idx] = 255;
             imdata.data[idx + 1] = 0;
             imdata.data[idx + 2] = 0;
             imdata.data[idx + 3] = 0;
           } else {
-            imdata.data[idx] = color[0];
-            imdata.data[idx + 1] = color[1];
-            imdata.data[idx + 2] = color[2];
+            var rgb = color.rgb();
+            imdata.data[idx] = rgb[0];
+            imdata.data[idx + 1] = rgb[1];
+            imdata.data[idx + 2] = rgb[2];
             imdata.data[idx + 3] = 255;
           }
         }
