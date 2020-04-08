@@ -50,10 +50,10 @@ function Colorpicker(options) {
     x: 'h',
     y: 'l',
     z: 'c',
-    steps: 3,
-    zval: 50,
-    from: chroma(0x0091e2),
-    to: chroma(0xd36e52)
+    steps: 6,
+    zval: 0,
+    from: chroma(0xe9f8aa),
+    to: chroma(0xbf6992)
   };
 
   var hash = location.hash.slice(2) ? unserialize(location.hash.slice(2)) : {};
@@ -64,6 +64,7 @@ Colorpicker.prototype = {
   init: function(options) {
     var initPosSet = false;
     updateAxis(options.axis);
+    options.zval = options.from.hcl()[options.dz];
     options.from = getXY(options.from);
     options.to = getXY(options.to);
 
