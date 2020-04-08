@@ -25,9 +25,8 @@ function unserialize(hash) {
   return {
     axis: parts[0],
     steps: Number(parts[1]),
-    zval: Number(parts[2]),
-    from: chroma(parts[3]),
-    to: chroma(parts[4])
+    from: chroma(parts[2]),
+    to: chroma(parts[3])
   };
 }
 
@@ -56,7 +55,7 @@ function Colorpicker(options) {
     to: chroma(0xbf6992)
   };
 
-  var hash = location.hash.slice(2) ? unserialize(location.hash.slice(2)) : {};
+  var hash = location.hash.slice(1) ? unserialize(location.hash.slice(1)) : {};
   this.init(extend(defaults, options, hash));
 }
 
@@ -283,7 +282,7 @@ Colorpicker.prototype = {
       // Update the url hash
       if (locationTimer) clearTimeout(locationTimer);
       locationTimer = setTimeout(function () {
-        location.href = '#/' + serialize();
+        location.href = '#' + serialize();
         locationTimer = null;
       }, 300);
     }
@@ -308,7 +307,6 @@ Colorpicker.prototype = {
     function serialize() {
       return options.x + options.y + options.z + '/' +
         options.steps + '/' +
-        options.zval + '/' +
         getColor(options.from[0], options.from[1]).hex().substr(1) + '/' +
         getColor(options.to[0], options.to[1]).hex().substr(1);
     }
