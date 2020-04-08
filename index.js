@@ -199,6 +199,7 @@ Colorpicker.prototype = {
     }
 
     var gradctx = getretinactx('grad');
+    var locationTimer = null;
 
     function showGradient() {
       // draw line
@@ -279,7 +280,11 @@ Colorpicker.prototype = {
       updateSwatches(colors);
 
       // Update the url hash
-      location.href = '#/' + serialize();
+      if (locationTimer) clearTimeout(locationTimer);
+      locationTimer = setTimeout(function () {
+        location.href = '#/' + serialize();
+        locationTimer = null;
+      }, 300);
     }
 
     function updateSwatches(colors) {
