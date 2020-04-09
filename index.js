@@ -1,9 +1,6 @@
 'use strict';
 
-/* eslint-disable no-new */
-
 const Clipboard = require('clipboard');
-const extend = require('xtend');
 const chroma = require('chroma-js');
 const d3 = require('d3');
 d3.geo = require('d3-geo').geo;
@@ -57,7 +54,7 @@ function Colorpicker(options) {
   };
 
   const hash = window.location.hash ? unserialize(window.location.hash.slice(1)) : {};
-  this.init(extend(defaults, options, hash));
+  this.init({ ...defaults, ...options, ...hash });
 }
 
 Colorpicker.prototype = {
@@ -409,6 +406,7 @@ clipboard.on('success', () => {
   }, 1000);
 });
 
+// eslint-disable-next-line no-new
 new Colorpicker({
   callback(colors) {
     colorArray = colors;
