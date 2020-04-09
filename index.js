@@ -48,10 +48,10 @@ function Colorpicker(options) {
     x: 'h',
     y: 'l',
     z: 'c',
-    steps: 6,
+    steps: 5,
     zval: 0,
-    from: chroma(0xe9f8aa),
-    to: chroma(0xbf6992)
+    from: chroma(0xc76584),
+    to: chroma(0x30c2f8)
   };
 
   const hash = window.location.hash ? unserialize(window.location.hash.slice(1)) : {};
