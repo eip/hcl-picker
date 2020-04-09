@@ -3,7 +3,8 @@
 const Clipboard = require('clipboard');
 const chroma = require('chroma-js');
 const d3 = require('d3');
-d3.geo = require('d3-geo').geo;
+
+window.d3 = d3; // DEBUG
 
 function autoscale(canvas) {
   const ctx = canvas.getContext('2d');
@@ -210,14 +211,8 @@ Colorpicker.prototype = {
       ctx.clearRect(0, 0, 450, 450);
 
       if (!initPosSet) {
-        d3.select('.drag.from').style({
-          left: `${x0 - a}px`,
-          top: `${y0 - a}px`
-        });
-        d3.select('.drag.to').style({
-          left: `${x1 - a}px`,
-          top: `${y1 - a}px`
-        });
+        d3.select('.drag.from').style('left', `${x0 - a}px`).style('top', `${y0 - a}px`);
+        d3.select('.drag.to').style('left', `${x1 - a}px`).style('top', `${y1 - a}px`);
       }
 
       // The line that connects the two circular
@@ -301,8 +296,7 @@ Colorpicker.prototype = {
         getColor(options.to[0], options.to[1]).hex().substr(1)}`;
     }
 
-    const drag = d3.behavior.drag()
-      .origin(Object)
+    const dragHandler = d3.drag()
       .on('drag', function dragHandler() {
         initPosSet = true;
 
@@ -314,10 +308,7 @@ Colorpicker.prototype = {
         // 440 = height of container. 30 = height of drag circle.
         posY = Math.max(0, Math.min(450 - 30, posY + d3.event.dy));
 
-        d3.select(this).style({
-          left: `${posX}px`,
-          top: `${posY}px`
-        });
+        d3.select(this).style('left', `${posX}px`).style('top', `${posY}px`);
 
         const from = d3.select(this).classed('from');
         let xv = (posX / (options.sq * options.scale)) * (options.xdim[3] - options.xdim[2]) + options.xdim[2];
@@ -334,8 +325,8 @@ Colorpicker.prototype = {
 
         showGradient();
       });
-    d3.select('.drag.to').call(drag);
-    d3.select('.drag.from').call(drag);
+    d3.select('.drag.to').call(dragHandler);
+    d3.select('.drag.from').call(dragHandler);
 
     function axisLinks() {
       const al = d3.select('.axis-select')
@@ -368,8 +359,8 @@ const vizs = d3.select('#visualization');
 const pick = d3.select('#picker');
 const select = d3.select('.js-select');
 
-const path = d3.geo.path()
-  .projection(d3.geo.albersUsa()
+const path = d3.geoPath()
+  .projection(d3.geoAlbersUsa()
     .scale(960)
     .translate([480, 265]));
 
@@ -381,9 +372,9 @@ const counties = svg.append('svg:g').attr('id', 'counties');
 
 function choropleth(colors) {
   const pad = d3.format('05d');
-  d3.json('example-data/unemployment.json', data => {
-    const quantize = d3.scale.quantile().domain(d3.values(data)).range(d3.range(colors.length));
-    d3.json('example-data/us-counties.json', json => {
+  d3.json('example-data/unemployment.json').then(data => {
+    const quantize = d3.scaleQuantile().domain(d3.values(data)).range(d3.range(colors.length));
+    d3.json('example-data/us-counties.json').then(json => {
       counties.selectAll('path').data(json.features).enter().append('svg:path').attr('style', d => `fill:${colors[quantize(data[pad(d.id)])]};`)
         .attr('d', path)
         .append('svg:title')
