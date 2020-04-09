@@ -6,7 +6,7 @@
   "scripts": {
     "test": "eslint --no-eslintrc -c .eslintrc index.js src",
     "start": "budo index.js --serve=bundle.js --live -d",
-    "build": "browserify index.js | uglifyjs -c -m > bundle.js"
+    "build": "browserify index.js | terser -c -m > bundle.js"
   },
   "repository": {
     "type": "git",
@@ -27,7 +27,7 @@
   "devDependencies": {
     "browserify": "^16.5.1",
     "budo": "^11.6.3",
-    "uglify-js": "^3.8.1"
+    "terser": "^4.6.11"
   },
   "dependencies": {
     "chroma-js": "^2.1.0",
