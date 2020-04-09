@@ -56,7 +56,7 @@ function Colorpicker(options) {
     to: chroma(0xbf6992)
   };
 
-  const hash = window.location.hash.slice(1) ? unserialize(window.location.hash.slice(1)) : {};
+  const hash = window.location.hash ? unserialize(window.location.hash.slice(1)) : {};
   this.init(extend(defaults, options, hash));
 }
 
@@ -93,31 +93,26 @@ Colorpicker.prototype = {
       const { xdim, ydim, sq } = options;
       const ctx = colorctx;
       const imdata = ctx.createImageData(sq, sq);
-      const clippedBuf = new ArrayBuffer(4);
-      const clippedArr = new Uint8Array(clippedBuf);
-      clippedArr.set([255, 0, 0, 0]);
+      const clippedPixel = new Uint8Array(new ArrayBuffer(4));
+      clippedPixel.set([255, 0, 0, 0]);
 
       for (let x = 0; x < sq; x++) {
+        const xv = xdim[2] + (x / sq) * (xdim[3] - xdim[2]);
         for (let y = 0; y < sq; y++) {
-          const idx = (x + y * sq) * 4;
-
-          const xv = xdim[2] + (x / sq) * (xdim[3] - xdim[2]);
           const yv = ydim[2] + (y / sq) * (ydim[3] - ydim[2]);
-
+          const idx = (x + y * sq) * 4;
           const color = getColor(xv, yv);
-          // const color = chroma(0x35d7e7);
           if (color.clipped()) {
-            imdata.data.set(clippedArr, idx);
+            imdata.data.set(clippedPixel, idx);
           } else {
             imdata.data.set([...color.rgb(), 255], idx);
           }
         }
       }
-      const t1 = performance.now();
       ctx.putImageData(imdata, 0, 0);
       showGradient();
-      const t2 = performance.now();
-      console.log(`renderColorSpace() took ${(t1 - t0)} + ${(t2 - t1)} milliseconds.`);
+      const t1 = performance.now();
+      console.log(`renderColorSpace() took ${(t1 - t0)} milliseconds.`);
     }
 
     function updateAxis(axis) {
