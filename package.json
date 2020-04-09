@@ -6,7 +6,7 @@
   "scripts": {
     "test": "eslint --no-eslintrc -c .eslintrc index.js src",
     "start": "budo index.js --serve=bundle.js --live -d",
-    "build": "browserify index.js | terser -c -m > bundle.js"
+    "build": "browserify index.js | terser --compress --mangle --comments false > bundle.js"
   },
   "repository": {
     "type": "git",
