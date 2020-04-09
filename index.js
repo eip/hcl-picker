@@ -39,9 +39,9 @@ function Colorpicker(options) {
     axis: 'hlc',
     colorspace: {
       dimensions: [
-        ['h', 'hue', 0, 360, 0],
-        ['c', 'chroma', 0, 135, 60],
-        ['l', 'lightness', 0, 100, 50]],
+        ['h', 'hue', 0, 360, 0.1],
+        ['c', 'chroma', 0, 135, 0.1],
+        ['l', 'lightness', 0, 100, 0.1]],
       axis: [
         ['hlc', 'hue-lightness'],
         ['clh', 'chroma-lightness'],
@@ -136,16 +136,16 @@ Colorpicker.prototype = {
       options.to = getXY(colorTo);
 
       d3.select('#slider')
-        .attr('min', options.zdim[2])
-        .attr('max', options.zdim[3])
-        .attr('step', options.zdim[3] > 99 ? 1 : 0.01)
-        .attr('value', options.zval);
+        .property('min', options.zdim[2])
+        .property('max', options.zdim[3])
+        .property('step', options.zdim[4])
+        .property('value', options.zval.toFixed(-Math.log10(options.zdim[4])));
 
       d3.select('.js-slider-title')
         .text(options.zdim[1]);
 
       d3.select('.js-slider-value')
-        .text(options.zval);
+        .text(options.zval.toFixed(-Math.log10(options.zdim[4] / 10)));
     }
 
     function setView(axis) {
@@ -162,9 +162,9 @@ Colorpicker.prototype = {
 
     const slider = d3.select('#slider');
     let busy = false;
-    slider.on('input', function mousemoveHandler() {
+    slider.on('input', function inputHandler() {
       d3.select('.js-slider-value').text(this.value);
-      options.zval = this.value;
+      options.zval = parseFloat(this.value);
       setTimeout(() => {
         if (busy) return;
         busy = true;
@@ -236,7 +236,7 @@ Colorpicker.prototype = {
       ctx.strokeStyle = '#fff';
       const colF = getColor(options.from[0], options.from[1]).hex();
       ctx.fillStyle = colF;
-      ctx.arc(x0, y0, a-1, 0, Math.PI * 2);
+      ctx.arc(x0, y0, a - 1, 0, Math.PI * 2);
       ctx.fill();
       ctx.closePath();
       ctx.stroke();
@@ -245,7 +245,7 @@ Colorpicker.prototype = {
       ctx.beginPath();
       const colT = getColor(options.to[0], options.to[1]).hex();
       ctx.fillStyle = colT;
-      ctx.arc(x1, y1, a-1, 0, Math.PI * 2);
+      ctx.arc(x1, y1, a - 1, 0, Math.PI * 2);
       ctx.fill();
       ctx.closePath();
       ctx.stroke();
