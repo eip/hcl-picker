@@ -158,10 +158,16 @@ Colorpicker.prototype = {
     }
 
     const slider = d3.select('#slider');
+    let busy = false;
     slider.on('input', function mousemoveHandler() {
       d3.select('.js-slider-value').text(this.value);
       options.zval = this.value;
-      renderColorSpace();
+      setTimeout(() => {
+        if (busy) return;
+        busy = true;
+        renderColorSpace();
+        busy = false;
+      }, 1);
     });
 
     d3.select('.js-add')
