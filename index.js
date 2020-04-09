@@ -64,9 +64,6 @@ Colorpicker.prototype = {
   init(options) {
     let initPosSet = false;
     updateAxis(options.axis);
-    options.zval = options.from.hcl()[options.dz];
-    options.from = getXY(options.from);
-    options.to = getXY(options.to);
 
     d3.select('#sl-val').select('span').html(options.zval);
 
@@ -116,6 +113,9 @@ Colorpicker.prototype = {
     }
 
     function updateAxis(axis) {
+      const colorFrom = options.from.hcl ? options.from : getColor(...options.from);
+      const colorTo = options.to.hcl ? options.to : getColor(...options.to);
+
       [options.x, options.y, options.z] = axis;
 
       for (let i = 0; i < options.colorspace.dimensions.length; i++) {
@@ -131,6 +131,9 @@ Colorpicker.prototype = {
           options.zdim = dim;
         }
       }
+      options.zval = colorFrom.hcl()[options.dz];
+      options.from = getXY(colorFrom);
+      options.to = getXY(colorTo);
 
       d3.select('#slider')
         .attr('min', options.zdim[2])
@@ -188,13 +191,6 @@ Colorpicker.prototype = {
       .on('click', () => {
         [window.location.href] = window.location.href.split('#');
       });
-
-    function resetGradient() {
-      options.from[0] = options.xdim[2] + (options.xdim[3] - options.xdim[2]) * (23 / 36);
-      options.from[1] = options.ydim[2] + (options.ydim[3] - options.ydim[2]) * 0.1;
-      options.to[0] = options.xdim[2] + (options.xdim[3] - options.xdim[2]) * (8 / 36);
-      options.to[1] = options.ydim[2] + (options.ydim[3] - options.ydim[2]) * 0.8;
-    }
 
     const gradctx = getretinactx('grad');
     let locationTimer = null;
@@ -358,7 +354,6 @@ Colorpicker.prototype = {
         .on('click', d => {
           initPosSet = false;
           updateAxis(d[0]);
-          resetGradient();
           renderColorSpace();
           showGradient();
           d3.selectAll('.axis-option').classed('active', _ => _[0] === d[0]);
