@@ -178,7 +178,7 @@ Colorpicker.prototype = {
 
     d3.select('.js-subtract')
       .on('click', () => {
-        if (options.steps !== 1) {
+        if (options.steps > 2) {
           options.steps -= 1;
           showGradient();
         }
