@@ -149,7 +149,6 @@ Colorpicker.prototype = {
     function setView(axis) {
       updateAxis(axis);
       renderColorSpace();
-      showGradient();
     }
 
     function getXY(color) {
@@ -195,8 +194,9 @@ Colorpicker.prototype = {
 
     function showGradient() {
       // draw line
-      const colors = []; let col;
+      const colors = [];
       const toX = (v, dim) => Math.round(((v - dim[2]) / (dim[3] - dim[2])) * options.sq * options.scale);
+      const getColorData = (x, y) => { const c = getColor(x, y); return { value: c.hex(), clipped: c.clipped() }; };
 
       const a = options.handleSize;
       const b = Math.floor(options.handleSize * 0.65);
@@ -225,24 +225,24 @@ Colorpicker.prototype = {
 
       // `from` drag control on the colorpicker.
       ctx.beginPath();
-      ctx.strokeStyle = '#fff';
-      const colF = getColor(options.from[0], options.from[1]).hex();
-      ctx.fillStyle = colF;
+      const colFrom = getColorData(options.from[0], options.from[1]);
+      ctx.strokeStyle = colFrom.clipped ? '#ff5a52' : '#fff';
+      ctx.fillStyle = colFrom.value;
       ctx.arc(x0, y0, a - 1, 0, Math.PI * 2);
       ctx.fill();
       ctx.closePath();
       ctx.stroke();
+      colors.push(colFrom);
 
       // `to` drag control on the colorpicker.
       ctx.beginPath();
-      const colT = getColor(options.to[0], options.to[1]).hex();
-      ctx.fillStyle = colT;
+      const colTo = getColorData(options.to[0], options.to[1]);
+      ctx.strokeStyle = colTo.clipped ? '#ff5a52' : '#fff';
+      ctx.fillStyle = colTo.value;
       ctx.arc(x1, y1, a - 1, 0, Math.PI * 2);
       ctx.fill();
       ctx.closePath();
       ctx.stroke();
-
-      colors.push(colF);
 
       for (let i = 1; i < options.steps - 1; i++) {
         fx = options.from[0] + (i / (options.steps - 1)) * (options.to[0] - options.from[0]);
@@ -251,17 +251,17 @@ Colorpicker.prototype = {
         y = toX(fy, options.ydim) + a;
 
         ctx.beginPath();
-        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-        col = getColor(fx, fy).hex();
-        colors.push(col);
-        ctx.fillStyle = col;
+        const colInt = getColorData(fx, fy);
+        ctx.strokeStyle = colInt.clipped ? 'rgba(255,90,82,0.75)' : 'rgba(255,255,255,0.25)';
+        ctx.fillStyle = colInt.value;
         ctx.arc(x, y, b, 0, Math.PI * 2);
         ctx.fill();
         ctx.closePath();
         ctx.stroke();
+        colors.push(colInt);
       }
 
-      colors.push(colT);
+      colors.push(colTo);
       updateSwatches(colors);
 
       // Update the url hash
@@ -273,20 +273,19 @@ Colorpicker.prototype = {
     }
 
     function updateSwatches(colors) {
+      if (options.callback) options.callback(colors);
       ['#visual-output', '#legend-output'].forEach(id => {
-        const output = d3.select(id).selectAll('div.swatch').data(colors);
+        const output = d3.select(id).selectAll('div.swatch').data(colors).style('background', c => c.value);
+        output.enter().append('div').attr('class', 'swatch').style('background', c => c.value);
         output.exit().remove();
-        output.enter().append('div').attr('class', 'swatch');
-        output.style('background', String);
       });
 
-      if (options.callback) options.callback(colors);
-      const output = d3.select('#code-output')
-        .selectAll('span.value').data(colors);
-
+      const output = d3.select('#code-output').selectAll('span.value')
+        .data(colors.map(c => ({ value: c.value, color: c.clipped ? '#ff5a52' : '' })))
+        .text(c => c.value).style('color', c => c.color);
+      output.enter().append('span').attr('class', 'value')
+        .text(c => c.value).style('color', c => c.color);
       output.exit().remove();
-      output.enter().append('span').attr('class', 'value');
-      output.text(String);
     }
 
     function serialize() {
@@ -343,14 +342,12 @@ Colorpicker.prototype = {
           initPosSet = false;
           updateAxis(d[0]);
           renderColorSpace();
-          showGradient();
           d3.selectAll('.axis-option').classed('active', _ => _[0] === d[0]);
         });
     }
 
     setView(options.axis);
     axisLinks();
-    showGradient();
   }
 };
 
@@ -400,8 +397,8 @@ clipboard.on('success', () => {
 // eslint-disable-next-line no-new
 new Colorpicker({
   callback(colors) {
-    colorArray = colors;
-    select.attr('data-clipboard-text', colors);
+    colorArray = colors.map(c => c.value);
+    select.attr('data-clipboard-text', colorArray);
   }
 });
 
