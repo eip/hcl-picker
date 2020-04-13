@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+
+    <title>Color Picker Layout</title>
+    <meta name="description" content="Color Picker Layout" />
+    <meta name="author" content="eip" />
+
+    <style>
+      :root {
+        /* window */
+        --font-family: -apple-system, blink, "Helvetica Neue", arial, sans-serif;
+        --font-size: 13px;
+        --font-color: #ddd;
+        --window-color: #202020;
+
+        /* tab */
+        --tab-width: 140px;
+        --tab-height: 40px;
+        --tab-color: #202020;
+        --active-tab-color: #404040;
+        --tab-border-color: #404040;
+        --tab-border-radius: 4px;
+
+        /* button */
+        --button-width: 71px;
+        --button-height: 40px;
+        --button-color: #404040;
+        --active-button-color: #505050;
+
+        /* slider */
+        --slider-grip-img: url("data:image/svg+xml,%3Csvg height='14' viewBox='0 0 6 14' width='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ddd'%3E%3Cpath d='m0 0h2v2h-2z'/%3E%3Cpath d='m4 0h2v2h-2z'/%3E%3Cpath d='m0 4h2v2h-2z'/%3E%3Cpath d='m4 4h2v2h-2z'/%3E%3Cpath d='m0 8h2v2h-2z'/%3E%3Cpath d='m4 8h2v2h-2z'/%3E%3Cpath d='m0 12h2v2h-2z'/%3E%3Cpath d='m4 12h2v2h-2z'/%3E%3C/g%3E%3C/svg%3E");
+        --slider-height: 36px;
+        --slider-thumb-width: 20px;
+
+        /* swatches */
+        --swatches-color: #303030;
+
+        /* canvas */
+        --canvas-size: 420px;
+        --canvas-pattern: url("data:image/svg+xml,%3Csvg height='40' viewBox='0 0 40 40' width='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m20 0h20v20h-20z'/%3E%3Cpath d='m0 20h20v20h-20z'/%3E%3C/svg%3E");
+        --canvas-dark-color: #242424;
+        --canvas-light-color: #2C2C2C;
+
+        /* widget */
+        --widget-width: calc(var(--tab-height) + var(--canvas-size) + 2 * var(--button-width));
+        --widget-height: calc(var(--tab-height) + var(--canvas-size) + var(--button-height));
+        /* --widget-color: #202020; */
+        --control-color: #404040;
+        --control-light-color: #989898;
+      }
+
+      body {
+        color: var(--font-color);
+        background: var(--window-color);
+        font-family: var(--font-family);
+        font-size: var(--font-size);
+      }
+
+      .widget {
+        display: grid;
+        grid-gap: 0;
+        grid-template-areas:
+          " . cp vs  .  .  ."
+          "hl cs cs cs sw sw"
+          "cl cs cs cs sw sw"
+          "hc cs cs cs sw sw"
+          " . cs cs cs sw sw"
+          " . cs cs cs bc bc"
+          " . cs cs cs bp bm"
+          " . sl sl sl br br";
+        grid-template-rows:
+          var(--tab-height) var(--tab-height) var(--tab-height) var(--tab-height) 1fr
+          var(--button-height) var(--button-height) var(--button-height);
+        grid-template-columns:
+          var(--tab-height) var(--tab-width) var(--tab-width) 1fr
+          var(--button-width) var(--button-width);
+        width: var(--widget-width);
+        height: var(--widget-height);
+        /* background-color: var(--widget-color); */
+      }
+
+      .widget .tab {
+        text-align: center;
+        background-color: var(--tab-color);
+        font-weight: bold;
+        line-height: var(--tab-height);
+      }
+
+      .widget .tab.active {
+        background-color: var(--active-tab-color);
+      }
+
+      .widget .tab.top {
+        margin-right: -1px;
+        border: 1px solid var(--tab-border-color);
+        border-bottom: none;
+        border-radius: var(--tab-border-radius) var(--tab-border-radius) 0 0;
+      }
+
+      .widget .tab.left {
+        margin-bottom: -1px;
+        border: 1px solid var(--tab-border-color);
+        border-right: none;
+        border-radius: var(--tab-border-radius) 0 0 var(--tab-border-radius);
+      }
+
+      .widget .slider {
+        grid-area: sl;
+        margin-top: 1px;
+        background-color: var(--button-color);
+      }
+
+      .widget .swatches {
+        grid-area: sw;
+        background-color: var(--swatches-color);
+      }
+
+      .widget .button {
+        margin-top: 1px;
+        margin-left: 1px;
+        text-align: center;
+        background-color: var(--button-color);
+        font-weight: bold;
+        line-height: var(--button-height);
+      }
+
+      .widget .canvas {
+        grid-area: cs;
+        background-color: var(--canvas-light-color);
+      }
+
+      .widget .canvas .pattern {
+        width: 100%;
+        height: 100%;
+        background-color: var(--canvas-dark-color);
+        mask-image: var(--canvas-pattern);
+      }
+
+      .widget .cp {
+        grid-area: cp;
+      }
+
+      .widget .vis {
+        grid-area: vs;
+      }
+
+      .widget .hl {
+        grid-area: hl;
+      }
+
+      .widget .cl {
+        grid-area: cl;
+      }
+
+      .widget .hc {
+        grid-area: hc;
+      }
+
+      .widget .copy {
+        grid-area: bc;
+      }
+
+      .widget .plus {
+        grid-area: bp;
+      }
+
+      .widget .minus {
+        grid-area: bm;
+      }
+
+      .widget .reset {
+        grid-area: br;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="widget">
+      <div class="tab cp top active">Color Picker</div>
+      <div class="tab vis top">Visualized</div>
+      <div class="tab hl left active">H-L</div>
+      <div class="tab cl left">C-L</div>
+      <div class="tab hc left">H-C</div>
+      <div class="slider"></div>
+      <div class="swatches"></div>
+      <div class="button copy">Copy</div>
+      <div class="button plus">+</div>
+      <div class="button minus">-</div>
+      <div class="button reset">Reset</div>
+      <div class="canvas">
+        <div class="pattern">
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
