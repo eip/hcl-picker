@@ -1,0 +1,11 @@
+printWidth: 120
+trailingComma: "none"
+arrowParens: "avoid"
+singleQuote: true
+overrides:
+  - files:
+      - "**/*.css"
+      - "**/*.scss"
+      - "**/*.html"
+    options:
+      singleQuote: false
