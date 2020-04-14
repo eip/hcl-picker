@@ -47,13 +47,12 @@
         --canvas-dark-color: #242424;
         --canvas-light-color: #2c2c2c;
 
+        /* gradient */
+        --gradient-handle-size: 30px;
+
         /* widget */
         --widget-width: calc(2 * var(--tab-height) + var(--canvas-size) + 2 * var(--button-width));
         --widget-height: calc(var(--tab-height) + var(--canvas-size) + var(--button-height));
-
-        /* --widget-color: #202020; */
-        --control-color: #404040;
-        --control-light-color: #989898;
       }
 
       body {
@@ -205,6 +204,12 @@
         mask-image: var(--canvas-pattern);
       }
 
+      .widget .canvas .gradient {
+        width: 100%;
+        height: 100%;
+        outline: 1px solid blue;
+      }
+
       .widget .cp {
         grid-area: cp;
       }
@@ -268,6 +273,7 @@
       <button class="palette button reset"><i class="fas fa-redo-alt"></i> Reset</button>
       <div class="palette canvas">
         <div class="pattern"></div>
+        <div class="gradient"></div>
       </div>
       <div class="visualized map hidden"></div>
     </div>
