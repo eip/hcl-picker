@@ -120,6 +120,10 @@
         background-color: var(--active-slider-thumb-color);
       }
 
+      .hidden {
+        display: none;
+      }
+
       .widget {
         display: grid;
         grid-gap: 0;
@@ -192,22 +196,39 @@
       }
 
       .widget .canvas {
+        position: relative;
         grid-area: cs;
         background-color: var(--canvas-light-color);
       }
 
       .widget .canvas .pattern {
-        width: 100%;
-        height: 100%;
+        position: absolute;
+        left: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
         background-color: var(--canvas-dark-color);
         -webkit-mask-image: var(--canvas-pattern);
         mask-image: var(--canvas-pattern);
       }
 
       .widget .canvas .gradient {
-        width: 100%;
-        height: 100%;
+        position: absolute;
+        pointer-events: none;
+        left: calc(var(--gradient-handle-size) / -2);
+        top: calc(var(--gradient-handle-size) / -2);
+        right: calc(var(--gradient-handle-size) / -2);
+        bottom: calc(var(--gradient-handle-size) / -2);
         outline: 1px solid blue;
+      }
+
+      .widget .gradient .handle {
+        position: absolute;
+        pointer-events: auto;
+        width: var(--gradient-handle-size);
+        height: var(--gradient-handle-size);
+        cursor: pointer;
+        outline: 1px solid red;
       }
 
       .widget .cp {
@@ -251,10 +272,6 @@
         grid-row: 2 / -1;
         background-color: var(--canvas-light-color);
       }
-
-      .widget .hidden {
-        display: none;
-      }
     </style>
   </head>
 
@@ -271,40 +288,22 @@
       <button class="palette button plus"><i class="fas fa-plus"></i></button>
       <button class="palette button minus"><i class="fas fa-minus"></i></button>
       <button class="palette button reset"><i class="fas fa-redo-alt"></i> Reset</button>
-      <div class="palette canvas">
+      <div id="canvas" class="palette canvas">
         <div class="pattern"></div>
-        <div class="gradient"></div>
+        <div class="gradient">
+          <div id="handleFrom" class="handle"></div>
+          <div id="handleTo" class="handle"></div>
+        </div>
       </div>
       <div class="visualized map hidden"></div>
     </div>
     <script>
-      views = [
-        { tab: document.getElementById("tabPalette"), selector: ".palette" },
-        { tab: document.getElementById("tabVisualized"), selector: ".visualized" }
-      ];
-
       function selectAll(selector) {
         return [...document.querySelectorAll(selector)];
       }
 
       function isActive(element) {
         return element.classList.contains("active");
-      }
-
-      function activate(element) {
-        element.classList.add("active");
-      }
-
-      function deactivate(element) {
-        element.classList.remove("active");
-      }
-
-      function show(element) {
-        element.classList.remove("hidden");
-      }
-
-      function hide(element) {
-        element.classList.add("hidden");
       }
 
       function switchView(view) {
@@ -314,9 +313,67 @@
         otherViews.forEach(v => selectAll(v.selector).forEach(hide));
         activate(view.tab);
         selectAll(view.selector).forEach(show);
+
+        function activate(element) {
+          element.classList.add("active");
+        }
+
+        function deactivate(element) {
+          element.classList.remove("active");
+        }
+
+        function show(element) {
+          element.classList.remove("hidden");
+        }
+
+        function hide(element) {
+          element.classList.add("hidden");
+        }
       }
 
+      function makeDraggable(element) {
+        const elementPos = { x: 0, y: 0 };
+        const cursorPos = { x: 0, y: 0 };
+        element.addEventListener("mousedown", startDrag);
+
+        function startDrag(e) {
+          e.preventDefault();
+          elementPos.x = element.offsetLeft;
+          elementPos.y = element.offsetTop;
+          cursorPos.x = e.clientX;
+          cursorPos.y = e.clientY;
+          document.addEventListener("mouseup", endDrad);
+          document.addEventListener("mousemove", doDrag);
+        }
+
+        function limitPos(value) {
+          return value < 0 ? 0 : value <= canvasSize ? value : canvasSize;
+        }
+
+        function doDrag(e) {
+          e.preventDefault();
+          elementPos.x += e.clientX - cursorPos.x;
+          elementPos.y += e.clientY - cursorPos.y;
+          cursorPos.x = e.clientX;
+          cursorPos.y = e.clientY;
+          element.style.left = `${limitPos(elementPos.x)}px`;
+          element.style.top = `${limitPos(elementPos.y)}px`;
+        }
+
+        function endDrad() {
+          document.removeEventListener("mousemove", doDrag);
+          document.removeEventListener("mouseup", endDrad);
+        }
+      }
+
+      const views = [
+        { tab: document.getElementById("tabPalette"), selector: ".palette" },
+        { tab: document.getElementById("tabVisualized"), selector: ".visualized" }
+      ];
       views.forEach(v => v.tab.addEventListener("click", () => switchView(v)));
+
+      const canvasSize = document.getElementById("canvas").offsetWidth;
+      ["handleFrom", "handleTo"].map(id => document.getElementById(id)).forEach(makeDraggable);
 
       [...document.getElementsByTagName("button")].forEach(el => {
         el.addEventListener("click", ev => console.log(ev.target.className));
