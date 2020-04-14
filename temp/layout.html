@@ -7,7 +7,7 @@
     <title>Color Picker Layout</title>
     <meta name="description" content="Color Picker Layout" />
     <meta name="author" content="eip" />
-
+    <link href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" rel="stylesheet" />
     <style>
       :root {
         /* window */
@@ -31,9 +31,12 @@
         --active-button-color: #505050;
 
         /* slider */
+        --slider-color: #303030;
+        --slider-thumb-color: #404040;
+        --active-slider-thumb-color: #505050;
         --slider-grip-img: url("data:image/svg+xml,%3Csvg height='14' viewBox='0 0 6 14' width='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ddd'%3E%3Cpath d='m0 0h2v2h-2z'/%3E%3Cpath d='m4 0h2v2h-2z'/%3E%3Cpath d='m0 4h2v2h-2z'/%3E%3Cpath d='m4 4h2v2h-2z'/%3E%3Cpath d='m0 8h2v2h-2z'/%3E%3Cpath d='m4 8h2v2h-2z'/%3E%3Cpath d='m0 12h2v2h-2z'/%3E%3Cpath d='m4 12h2v2h-2z'/%3E%3C/g%3E%3C/svg%3E");
-        --slider-height: 36px;
         --slider-thumb-width: 20px;
+        --slider-thumb-height: calc(var(--button-height) - 1px);
 
         /* swatches */
         --swatches-color: #303030;
@@ -42,44 +45,103 @@
         --canvas-size: 420px;
         --canvas-pattern: url("data:image/svg+xml,%3Csvg height='40' viewBox='0 0 40 40' width='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m20 0h20v20h-20z'/%3E%3Cpath d='m0 20h20v20h-20z'/%3E%3C/svg%3E");
         --canvas-dark-color: #242424;
-        --canvas-light-color: #2C2C2C;
+        --canvas-light-color: #2c2c2c;
 
         /* widget */
-        --widget-width: calc(var(--tab-height) + var(--canvas-size) + 2 * var(--button-width));
+        --widget-width: calc(2 * var(--tab-height) + var(--canvas-size) + 2 * var(--button-width));
         --widget-height: calc(var(--tab-height) + var(--canvas-size) + var(--button-height));
+
         /* --widget-color: #202020; */
         --control-color: #404040;
         --control-light-color: #989898;
       }
 
       body {
-        color: var(--font-color);
         background: var(--window-color);
+      }
+
+      body,
+      button {
+        color: var(--font-color);
         font-family: var(--font-family);
         font-size: var(--font-size);
+      }
+
+      button::-moz-focus-inner {
+        border: 0;
+      }
+
+      button:focus {
+        outline: 0;
+      }
+
+      input[type="range"] {
+        -webkit-appearance: none;
+        margin: 0;
+        cursor: pointer;
+        background-color: var(--slider-color);
+      }
+
+      input[type="range"]::-moz-focus-outer {
+        border: 0;
+      }
+
+      input[type="range"]:focus {
+        outline: 0;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: var(--slider-thumb-width);
+        height: var(--slider-thumb-height);
+        background-color: var(--slider-thumb-color);
+        background-image: var(--slider-grip-img);
+        background-repeat: no-repeat;
+        background-position: center center;
+        cursor: ew-resize;
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        width: var(--slider-thumb-width);
+        height: var(--slider-thumb-height);
+        background-color: var(--slider-thumb-color);
+        background-image: var(--slider-grip-img);
+        background-repeat: no-repeat;
+        background-position: center center;
+        cursor: ew-resize;
+        border: 0;
+        border-radius: 0;
+      }
+
+      input[type="range"]:focus::-webkit-slider-thumb {
+        background-color: var(--active-slider-thumb-color);
+      }
+
+      input[type="range"]:focus::-moz-range-thumb {
+        background-color: var(--active-slider-thumb-color);
       }
 
       .widget {
         display: grid;
         grid-gap: 0;
         grid-template-areas:
-          " . cp vs  .  .  ."
-          "hl cs cs cs sw sw"
-          "cl cs cs cs sw sw"
-          "hc cs cs cs sw sw"
-          " . cs cs cs sw sw"
-          " . cs cs cs bc bc"
-          " . cs cs cs bp bm"
-          " . sl sl sl br br";
+          " . cp vs  .  .  .  ."
+          "hl cs cs cs sw sw  ."
+          "cl cs cs cs sw sw  ."
+          "hc cs cs cs sw sw  ."
+          " . cs cs cs sw sw  ."
+          " . cs cs cs bc bc  ."
+          " . cs cs cs bp bm  ."
+          " . sl sl sl br br  .";
         grid-template-rows:
           var(--tab-height) var(--tab-height) var(--tab-height) var(--tab-height) 1fr
           var(--button-height) var(--button-height) var(--button-height);
         grid-template-columns:
           var(--tab-height) var(--tab-width) var(--tab-width) 1fr
-          var(--button-width) var(--button-width);
+          var(--button-width) var(--button-width) var(--tab-height);
+        margin: 0 auto;
         width: var(--widget-width);
         height: var(--widget-height);
-        /* background-color: var(--widget-color); */
       }
 
       .widget .tab {
@@ -110,7 +172,6 @@
       .widget .slider {
         grid-area: sl;
         margin-top: 1px;
-        background-color: var(--button-color);
       }
 
       .widget .swatches {
@@ -119,12 +180,16 @@
       }
 
       .widget .button {
-        margin-top: 1px;
-        margin-left: 1px;
-        text-align: center;
+        margin: 1px 0 0 1px;
+        padding: 0;
+        border: none;
         background-color: var(--button-color);
         font-weight: bold;
-        line-height: var(--button-height);
+      }
+
+      .widget .button:hover,
+      .widget .button:focus {
+        background-color: var(--active-button-color);
       }
 
       .widget .canvas {
@@ -136,6 +201,7 @@
         width: 100%;
         height: 100%;
         background-color: var(--canvas-dark-color);
+        -webkit-mask-image: var(--canvas-pattern);
         mask-image: var(--canvas-pattern);
       }
 
@@ -174,26 +240,81 @@
       .widget .reset {
         grid-area: br;
       }
+
+      .widget .map {
+        grid-column: 2 / -2;
+        grid-row: 2 / -1;
+        background-color: var(--canvas-light-color);
+      }
+
+      .widget .hidden {
+        display: none;
+      }
     </style>
   </head>
 
   <body>
     <div class="widget">
-      <div class="tab cp top active">Color Picker</div>
-      <div class="tab vis top">Visualized</div>
-      <div class="tab hl left active">H-L</div>
-      <div class="tab cl left">C-L</div>
-      <div class="tab hc left">H-C</div>
-      <div class="slider"></div>
-      <div class="swatches"></div>
-      <div class="button copy">Copy</div>
-      <div class="button plus">+</div>
-      <div class="button minus">-</div>
-      <div class="button reset">Reset</div>
-      <div class="canvas">
-        <div class="pattern">
-        </div>
+      <button id="tabPalette" class="tab cp top active"><i class="fas fa-palette"></i> Color Palette</button>
+      <button id="tabVisualized" class="tab vis top"><i class="far fa-image"></i> Visualized</button>
+      <button class="palette tab hl left active">H-L</button>
+      <button class="palette tab cl left">C-L</button>
+      <button class="palette tab hc left">H-C</button>
+      <input class="palette slider" type="range" value="50" min="0" max="100" step="0.1" />
+      <div class="palette swatches"></div>
+      <button class="palette button copy"><i class="fas fa-copy"></i> Copy</button>
+      <button class="palette button plus"><i class="fas fa-plus"></i></button>
+      <button class="palette button minus"><i class="fas fa-minus"></i></button>
+      <button class="palette button reset"><i class="fas fa-redo-alt"></i> Reset</button>
+      <div class="palette canvas">
+        <div class="pattern"></div>
       </div>
+      <div class="visualized map hidden"></div>
     </div>
+    <script>
+      views = [
+        { tab: document.getElementById("tabPalette"), selector: ".palette" },
+        { tab: document.getElementById("tabVisualized"), selector: ".visualized" }
+      ];
+
+      function selectAll(selector) {
+        return [...document.querySelectorAll(selector)];
+      }
+
+      function isActive(element) {
+        return element.classList.contains("active");
+      }
+
+      function activate(element) {
+        element.classList.add("active");
+      }
+
+      function deactivate(element) {
+        element.classList.remove("active");
+      }
+
+      function show(element) {
+        element.classList.remove("hidden");
+      }
+
+      function hide(element) {
+        element.classList.add("hidden");
+      }
+
+      function switchView(view) {
+        if (isActive(view.tab)) return;
+        otherViews = views.filter(v => v != view);
+        otherViews.forEach(v => deactivate(v.tab));
+        otherViews.forEach(v => selectAll(v.selector).forEach(hide));
+        activate(view.tab);
+        selectAll(view.selector).forEach(show);
+      }
+
+      views.forEach(v => v.tab.addEventListener("click", () => switchView(v)));
+
+      [...document.getElementsByTagName("button")].forEach(el => {
+        el.addEventListener("click", ev => console.log(ev.target.className));
+      });
+    </script>
   </body>
 </html>
