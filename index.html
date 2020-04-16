@@ -306,12 +306,7 @@
       </div>
       <div class="map hidden" data-owner="visualized"></div>
     </div>
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.1.0/chroma.min.js"></script> -->
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/6.6.4/math.js"></script> -->
-    <!-- <script src="js/math.js"></script> -->
-    <!-- <script src="js/conversions.js"></script>
-    <script src="js/utilities.js"></script> -->
-    <script src="color.js"></script>
+    <script src="js/color.js"></script>
     <script>
       function select(selector) {
         return [...document.querySelectorAll(selector)];
@@ -385,8 +380,6 @@
       }
 
       function renderColorSpace() {
-        // const t0 = performance.now();
-        // const { xdim, ydim, sq } = options;
         const {
           h: { min: xmin, max: xmax },
           l: { min: ymin, max: ymax }
@@ -407,20 +400,11 @@
           for (let y = 0; y < height; y++) {
             const yv = ymin + (y * (ymax - ymin)) / height;
             const idx = (x + y * width) * 4;
-            // calcColor(xv, yv, zv);
-            // if (x + y < 100 || x + y > 320) {
-            //   // if (color.clipped()) {
-            //   imgData.data.set(clippedPixel, idx);
-            // } else {
-            //   imgData.data.set(coloredPixel, idx);
-            // }
             imgData.data.set(calcColor(xv, yv), idx);
           }
         }
         colorSpaceCtx.putImageData(imgData, 0, 0);
         // showGradient();
-        // const t1 = performance.now();
-        // console.log(`renderColorSpace() took ${t1 - t0} milliseconds.`);
 
         function calcColor(x, y) {
           colorBuf[0] = y;
@@ -465,10 +449,6 @@
       select(".tab[data-view]").forEach(el => el.addEventListener("click", () => switchView(el)));
       select(".gradient .handle").forEach(makeDraggable);
 
-      [...document.getElementsByTagName("button")].forEach(el => {
-        el.addEventListener("click", ev => console.log(ev.target.className));
-      });
-
       select(".button.reset")[0].addEventListener("click", () => {
         const t0 = performance.now();
         // for (let i = 0; i < 100; ++i) {
@@ -477,7 +457,7 @@
         const t1 = performance.now();
         console.log(`renderColorSpace() took ${t1 - t0} milliseconds.`);
       });
-      // renderColorSpace();
+      renderColorSpace();
     </script>
   </body>
 </html>
