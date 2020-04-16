@@ -1,107 +1,483 @@
 <!DOCTYPE html>
-<html>
+
+<html lang="en">
   <head>
-  <meta charset='utf-8' />
-  <title>Colorpicker for data | tristen</title>
-  <meta name='twitter:site' content='@fallsemo' />
-  <meta property='og:site_name' content='Colorpicker for data' />
-  <meta name='twitter:url' content='http://tristen.ca/hcl-picker/' />
-  <meta name='twitter:domain' content='http://tristen.ca/hcl-picker/' />
-  <meta property='og:url' content='http://tristen.ca/hcl-picker/' />
-  <meta name='twitter:title' content='Colorpicker for data' />
-  <meta property='og:title' content='Colorpicker for data' />
-  <meta name='twitter:description' content='Avoiding equidistant HSV colors' />
-  <meta property='og:description' content='Avoiding equidistant HSV colors' />
-  <meta name='twitter:image' content='http://tristen.ca/hcl-picker/img/twitter-card.png' />
-  <meta name='st:image' content='http://tristen.ca/hcl-picker/img/twitter-card.png' />
-  <meta property='og:image' content='http://tristen.ca/hcl-picker/img/twitter-card.png' />
-  <meta property='og:type' content='website' />
-  <meta name='twitter:card' content='summary' />
-  <link rel='shortcut icon' href='img/favicon.png' type='image/x-icon' />
-  <link rel='stylesheet' href='css/base.css' />
-  <link rel='stylesheet' href='css/site.css' />
-</head>
-<body>
+    <meta charset="utf-8" />
 
-<header class='fill-white pad2y space-bottom2'>
-  <div class='limiter clearfix'>
-    <div class='col8 margin2'>
-      <a href='/' class='sprite logo fl'>HCL</a>
-      <div class='fl pad1x pad0y'>
-        <h1>Colorpicker for data</h1>
-        <span class='quiet'>Built off Gregor Aisch's <a href='http://vis4.net/blog/posts/avoid-equidistant-hsv-colors'>article</a> and color conversion library <a href='https://github.com/gka/chroma.js'>chroma.js</a>. Fork it on <a href='https://github.com/tristen/hcl-picker/'>GitHub</a>.</span>
+    <title>Color Picker Layout</title>
+    <meta name="description" content="Color Picker Layout" />
+    <meta name="author" content="eip" />
+    <link href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" rel="stylesheet" />
+    <style>
+      :root {
+        /* window */
+        --font-family: -apple-system, blink, "Helvetica Neue", arial, sans-serif;
+        --font-size: 13px;
+        --font-color: #ddd;
+        --window-color: #202020;
+
+        /* tab */
+        --tab-width: 140px;
+        --tab-height: 40px;
+        --tab-color: #202020;
+        --active-tab-color: #404040;
+        --tab-border-color: #404040;
+        --tab-border-radius: 4px;
+
+        /* button */
+        --button-width: 71px;
+        --button-height: 40px;
+        --button-color: #404040;
+        --active-button-color: #505050;
+
+        /* slider */
+        --slider-color: #303030;
+        --slider-thumb-color: #404040;
+        --active-slider-thumb-color: #505050;
+        --slider-grip-img: url("data:image/svg+xml,%3Csvg height='14' viewBox='0 0 6 14' width='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ddd'%3E%3Cpath d='m0 0h2v2h-2z'/%3E%3Cpath d='m4 0h2v2h-2z'/%3E%3Cpath d='m0 4h2v2h-2z'/%3E%3Cpath d='m4 4h2v2h-2z'/%3E%3Cpath d='m0 8h2v2h-2z'/%3E%3Cpath d='m4 8h2v2h-2z'/%3E%3Cpath d='m0 12h2v2h-2z'/%3E%3Cpath d='m4 12h2v2h-2z'/%3E%3C/g%3E%3C/svg%3E");
+        --slider-thumb-width: 20px;
+        --slider-thumb-height: calc(var(--button-height) - 1px);
+
+        /* swatches */
+        --swatches-color: #303030;
+
+        /* canvas */
+        --canvas-size: 420px;
+        --canvas-pattern: url("data:image/svg+xml,%3Csvg height='40' viewBox='0 0 40 40' width='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m20 0h20v20h-20z'/%3E%3Cpath d='m0 20h20v20h-20z'/%3E%3C/svg%3E");
+        --canvas-dark-color: #242424;
+        --canvas-light-color: #2c2c2c;
+
+        /* gradient */
+        --gradient-handle-size: 30px;
+
+        /* widget */
+        --widget-width: calc(2 * var(--tab-height) + var(--canvas-size) + 2 * var(--button-width));
+        --widget-height: calc(var(--tab-height) + var(--canvas-size) + var(--button-height));
+      }
+
+      body {
+        background: var(--window-color);
+      }
+
+      body,
+      button {
+        color: var(--font-color);
+        font-family: var(--font-family);
+        font-size: var(--font-size);
+      }
+
+      button::-moz-focus-inner {
+        border: 0;
+      }
+
+      button:focus {
+        outline: 0;
+      }
+
+      input[type="range"] {
+        -webkit-appearance: none;
+        margin: 0;
+        cursor: pointer;
+        background-color: var(--slider-color);
+      }
+
+      input[type="range"]::-moz-focus-outer {
+        border: 0;
+      }
+
+      input[type="range"]:focus {
+        outline: 0;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: var(--slider-thumb-width);
+        height: var(--slider-thumb-height);
+        background-color: var(--slider-thumb-color);
+        background-image: var(--slider-grip-img);
+        background-repeat: no-repeat;
+        background-position: center center;
+        cursor: ew-resize;
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        width: var(--slider-thumb-width);
+        height: var(--slider-thumb-height);
+        background-color: var(--slider-thumb-color);
+        background-image: var(--slider-grip-img);
+        background-repeat: no-repeat;
+        background-position: center center;
+        cursor: ew-resize;
+        border: 0;
+        border-radius: 0;
+      }
+
+      input[type="range"]:focus::-webkit-slider-thumb {
+        background-color: var(--active-slider-thumb-color);
+      }
+
+      input[type="range"]:focus::-moz-range-thumb {
+        background-color: var(--active-slider-thumb-color);
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .widget {
+        display: grid;
+        grid-gap: 0;
+        grid-template-areas:
+          " . cp vs  .  .  .  ."
+          "hl cs cs cs sw sw  ."
+          "cl cs cs cs sw sw  ."
+          "hc cs cs cs sw sw  ."
+          " . cs cs cs sw sw  ."
+          " . cs cs cs bc bc  ."
+          " . cs cs cs bp bm  ."
+          " . sl sl sl br br  .";
+        grid-template-rows:
+          var(--tab-height) var(--tab-height) var(--tab-height) var(--tab-height) 1fr
+          var(--button-height) var(--button-height) var(--button-height);
+        grid-template-columns:
+          var(--tab-height) var(--tab-width) var(--tab-width) 1fr
+          var(--button-width) var(--button-width) var(--tab-height);
+        margin: 0 auto;
+        width: var(--widget-width);
+        height: var(--widget-height);
+      }
+
+      .widget .tab {
+        text-align: center;
+        background-color: var(--tab-color);
+        font-weight: bold;
+        line-height: var(--tab-height);
+      }
+
+      .widget .tab.active {
+        background-color: var(--active-tab-color);
+      }
+
+      .widget .tab.top {
+        margin-right: -1px;
+        border: 1px solid var(--tab-border-color);
+        border-bottom: none;
+        border-radius: var(--tab-border-radius) var(--tab-border-radius) 0 0;
+      }
+
+      .widget .tab.left {
+        margin-bottom: -1px;
+        border: 1px solid var(--tab-border-color);
+        border-right: none;
+        border-radius: var(--tab-border-radius) 0 0 var(--tab-border-radius);
+      }
+
+      .widget .slider {
+        grid-area: sl;
+        margin-top: 1px;
+      }
+
+      .widget .swatches {
+        grid-area: sw;
+        background-color: var(--swatches-color);
+      }
+
+      .widget .button {
+        margin: 1px 0 0 1px;
+        padding: 0;
+        border: none;
+        background-color: var(--button-color);
+        font-weight: bold;
+      }
+
+      .widget .button:hover,
+      .widget .button:focus {
+        background-color: var(--active-button-color);
+      }
+
+      .widget .canvas {
+        position: relative;
+        grid-area: cs;
+        background-color: var(--canvas-light-color);
+      }
+
+      .widget .canvas .pattern {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: var(--canvas-dark-color);
+        -webkit-mask-image: var(--canvas-pattern);
+        mask-image: var(--canvas-pattern);
+      }
+
+      .widget .canvas canvas {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .widget .canvas .gradient {
+        position: absolute;
+        pointer-events: none;
+        left: calc(var(--gradient-handle-size) / -2);
+        top: calc(var(--gradient-handle-size) / -2);
+        right: calc(var(--gradient-handle-size) / -2);
+        bottom: calc(var(--gradient-handle-size) / -2);
+        outline: 1px solid blue;
+      }
+
+      .widget .gradient .handle {
+        position: absolute;
+        pointer-events: auto;
+        width: var(--gradient-handle-size);
+        height: var(--gradient-handle-size);
+        cursor: pointer;
+        outline: 1px solid red;
+      }
+
+      .widget .cp {
+        grid-area: cp;
+      }
+
+      .widget .vis {
+        grid-area: vs;
+      }
+
+      .widget .hl {
+        grid-area: hl;
+      }
+
+      .widget .cl {
+        grid-area: cl;
+      }
+
+      .widget .hc {
+        grid-area: hc;
+      }
+
+      .widget .copy {
+        grid-area: bc;
+      }
+
+      .widget .plus {
+        grid-area: bp;
+      }
+
+      .widget .minus {
+        grid-area: bm;
+      }
+
+      .widget .reset {
+        grid-area: br;
+      }
+
+      .widget .map {
+        grid-column: 2 / -2;
+        grid-row: 2 / -1;
+        background-color: var(--canvas-light-color);
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="widget">
+      <button class="tab cp top active" data-view="palette"><i class="fas fa-palette"></i> Color Palette</button>
+      <button class="tab vis top" data-view="visualized"><i class="far fa-image"></i> Visualized</button>
+      <button class="tab hl left active" data-owner="palette">H-L</button>
+      <button class="tab cl left" data-owner="palette">C-L</button>
+      <button class="tab hc left" data-owner="palette">H-C</button>
+      <input class="slider" data-owner="palette" type="range" value="50" min="0" max="100" step="0.1" />
+      <div class="swatches" data-owner="palette"></div>
+      <button class="button copy" data-owner="palette"><i class="fas fa-copy"></i> Copy</button>
+      <button class="button plus" data-owner="palette"><i class="fas fa-plus"></i></button>
+      <button class="button minus" data-owner="palette"><i class="fas fa-minus"></i></button>
+      <button class="button reset" data-owner="palette"><i class="fas fa-redo-alt"></i> Reset</button>
+      <div id="canvas" class="canvas" data-owner="palette">
+        <div class="pattern"></div>
+        <canvas id="colorspace"></canvas>
+        <div class="gradient">
+          <div class="handle" data-key="from"></div>
+          <div class="handle" data-key="to"></div>
+        </div>
       </div>
+      <div class="map hidden" data-owner="visualized"></div>
     </div>
-  </div>
-</header>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.1.0/chroma.min.js"></script> -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/6.6.4/math.js"></script> -->
+    <!-- <script src="js/math.js"></script> -->
+    <!-- <script src="js/conversions.js"></script>
+    <script src="js/utilities.js"></script> -->
+    <script src="color.js"></script>
+    <script>
+      function select(selector) {
+        return [...document.querySelectorAll(selector)];
+      }
 
-<div class='limiter'>
+      function isActive(element) {
+        return element.classList.contains("active");
+      }
 
-  <div class='col12 clearfix'>
-    <div class='pill col4 margin4 clearfix'><!--
-      --><button href='#picker' class='button active mode col6 js-mode'>
-        <span class='sprite icon picker'></span> Colorpicker
-      </button><!--
-      --><button href='#visualization' class='button mode col6 js-mode'>
-        <span class='sprite icon map'></span> Visualized
-      </button>
-    </div>
-  </div>
+      function switchView(tab) {
+        if (isActive(tab)) return;
+        select("*[data-owner]").forEach(hide);
+        select(".tab[data-view]").forEach(deactivate);
+        activate(tab);
+        select(`*[data-owner=${tab.dataset.view}]`).forEach(show);
 
-  <section id='picker' class='picker active contain space-bottom2 space-top2'>
-    <nav class='axis-select pin-topleft z1'></nav>
-    <div class='canvas fl'>
-      <div id='bg'>
-        <canvas id='colorspace' width='210' height='210'></canvas>
-      </div>
-      <canvas id='grad' width='450' height='450'></canvas>
-      <div class='drag_cont'>
-        <div class='drag from'></div>
-        <div class='drag to'></div>
-      </div>
-      <input id='slider' class='slider col12' type='range' value='0' min='0' max='1' step='0.05' />
+        function activate(element) {
+          element.classList.add("active");
+        }
 
-      <div class='slider-output pin-bottomleft'>
-        <span class='quiet capitalize js-slider-title'></span>
-        <span class='quiet js-slider-value'></span>
-      </div>
-    </div>
-    <div class='sidebar'>
-      <div class='output pad1'>
-        <div id='visual-output' class='fl'></div>
-        <div id='code-output' class='fl hexes quiet'></div>
-      </div>
+        function deactivate(element) {
+          element.classList.remove("active");
+        }
 
-      <button id='select' class='z1 pin-bottom keyline-bottom button col12 js-select select-all control unround'>
-        Copy<div class='sprite icon clipboard'></div>
-      </button>
+        function show(element) {
+          element.classList.remove("hidden");
+        }
 
-      <div id='controls' class='controls pill unround pin-bottom col12 clearfix'><!--
-        --><button class='col6 button unround js-add' data-tooltip='Add a swatch' >
-          <span class='icon sprite plus'></span>
-        </button><!--
-        --><button class='col6 button unround js-subtract' data-tooltip='Remove a swatch'>
-          <span class='icon sprite minus'></span>
-        </button>
-      </div>
+        function hide(element) {
+          element.classList.add("hidden");
+        }
+      }
 
-      <button id='reset' class='pin-bottom keyline-bottom button col12 js-reset control round-bottomright'>Reset</button>
-    </div>
-  </section>
+      function makeDraggable(element) {
+        const elementPos = { x: 0, y: 0 };
+        const cursorPos = { x: 0, y: 0 };
+        const key = element.dataset.key;
+        state[key] = state[key] || {};
+        element.addEventListener("mousedown", startDrag);
 
-  <section id='visualization' class='hidden'>
-    <div id='legend' class='legend dark pin-bottomright pad1'>
-      <h4>U.S Unemployment 2008</h4>
-      <ul id='legend-output' class='clearfix'></ul>
-      <div class='clearfix'>
-        <span class='fl'>Low</span>
-        <span class='fr'>High</span>
-      </div>
-    </div>
-  </section>
+        function startDrag(e) {
+          e.preventDefault();
+          elementPos.x = element.offsetLeft;
+          elementPos.y = element.offsetTop;
+          cursorPos.x = e.clientX;
+          cursorPos.y = e.clientY;
+          document.addEventListener("mouseup", endDrad);
+          document.addEventListener("mousemove", doDrag);
+        }
 
-</div>
+        function limitPos(value) {
+          return value < 0 ? 0 : value <= canvasSize ? value : canvasSize;
+        }
 
-<script src='bundle.js'></script>
-</body>
+        function doDrag(e) {
+          e.preventDefault();
+          elementPos.x += e.clientX - cursorPos.x;
+          elementPos.y += e.clientY - cursorPos.y;
+          cursorPos.x = e.clientX;
+          cursorPos.y = e.clientY;
+          state[key].x = limitPos(elementPos.x);
+          state[key].y = limitPos(elementPos.y);
+          element.style.left = `${state[key].x}px`;
+          element.style.top = `${state[key].y}px`;
+        }
+
+        function endDrad() {
+          document.removeEventListener("mousemove", doDrag);
+          document.removeEventListener("mouseup", endDrad);
+        }
+      }
+
+      function renderColorSpace() {
+        // const t0 = performance.now();
+        // const { xdim, ydim, sq } = options;
+        const {
+          h: { min: xmin, max: xmax },
+          l: { min: ymin, max: ymax }
+        } = state.colorSpace.dimension;
+        const zv = state.zval;
+        const { width, height } = colorSpace;
+        const imgData = colorSpaceCtx.createImageData(width, height);
+        const clippedPixel = new Uint8Array(new ArrayBuffer(4));
+        clippedPixel.set([255, 0, 0, 0]);
+        const coloredPixel = new Uint8Array(new ArrayBuffer(4));
+        coloredPixel.set([0, 0, 0, 255]);
+        const minVal = -0.000005;
+        const maxVal = 1.000005;
+
+        const colorBuf = [0, 0, 0];
+        for (let x = 0; x < width; x++) {
+          const xv = xmin + (x * (xmax - xmin)) / width;
+          for (let y = 0; y < height; y++) {
+            const yv = ymin + (y * (ymax - ymin)) / height;
+            const idx = (x + y * width) * 4;
+            // calcColor(xv, yv, zv);
+            // if (x + y < 100 || x + y > 320) {
+            //   // if (color.clipped()) {
+            //   imgData.data.set(clippedPixel, idx);
+            // } else {
+            //   imgData.data.set(coloredPixel, idx);
+            // }
+            imgData.data.set(calcColor(xv, yv), idx);
+          }
+        }
+        colorSpaceCtx.putImageData(imgData, 0, 0);
+        // showGradient();
+        // const t1 = performance.now();
+        // console.log(`renderColorSpace() took ${t1 - t0} milliseconds.`);
+
+        function calcColor(x, y) {
+          colorBuf[0] = y;
+          colorBuf[1] = zv;
+          colorBuf[2] = x;
+
+          lch2sRGB(colorBuf);
+          if (
+            colorBuf[0] >= minVal &&
+            colorBuf[0] <= maxVal &&
+            colorBuf[1] >= minVal &&
+            colorBuf[1] <= maxVal &&
+            colorBuf[2] >= minVal &&
+            colorBuf[2] <= maxVal
+          ) {
+            sRGBfloat2int(colorBuf, coloredPixel);
+            return coloredPixel;
+          }
+          return clippedPixel;
+        }
+      }
+
+      const state = {
+        colorSpace: {
+          dimension: {
+            h: { name: "hue", min: 0, max: 360, step: 0.1 },
+            c: { name: "chroma", min: 0, max: 135, step: 0.1 },
+            l: { name: "lightness", min: 0, max: 100, step: 0.1 }
+          },
+          axis: [
+            ["hlc", "hue-lightness"],
+            ["clh", "chroma-lightness"],
+            ["hcl", "hue-chroma"]
+          ]
+        },
+        zval: 42.32
+      };
+      const canvasSize = select("#canvas")[0].offsetWidth;
+      const colorSpace = select("#colorspace")[0];
+      colorSpace.width = colorSpace.height = canvasSize / 1;
+      const colorSpaceCtx = colorSpace.getContext("2d");
+      select(".tab[data-view]").forEach(el => el.addEventListener("click", () => switchView(el)));
+      select(".gradient .handle").forEach(makeDraggable);
+
+      [...document.getElementsByTagName("button")].forEach(el => {
+        el.addEventListener("click", ev => console.log(ev.target.className));
+      });
+
+      select(".button.reset")[0].addEventListener("click", () => {
+        const t0 = performance.now();
+        // for (let i = 0; i < 100; ++i) {
+        renderColorSpace();
+        // }
+        const t1 = performance.now();
+        console.log(`renderColorSpace() took ${t1 - t0} milliseconds.`);
+      });
+      // renderColorSpace();
+    </script>
+  </body>
 </html>
