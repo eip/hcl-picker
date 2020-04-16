@@ -42,4 +42,6 @@ rules:
   no-plusplus: off
   no-bitwise: off
   no-await-in-loop: off
-  
+  operator-linebreak:
+    - error
+    - after
