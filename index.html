@@ -37,6 +37,7 @@
         --slider-grip-img: url("data:image/svg+xml,%3Csvg height='14' viewBox='0 0 6 14' width='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ddd'%3E%3Cpath d='m0 0h2v2h-2z'/%3E%3Cpath d='m4 0h2v2h-2z'/%3E%3Cpath d='m0 4h2v2h-2z'/%3E%3Cpath d='m4 4h2v2h-2z'/%3E%3Cpath d='m0 8h2v2h-2z'/%3E%3Cpath d='m4 8h2v2h-2z'/%3E%3Cpath d='m0 12h2v2h-2z'/%3E%3Cpath d='m4 12h2v2h-2z'/%3E%3C/g%3E%3C/svg%3E");
         --slider-thumb-width: 20px;
         --slider-thumb-height: calc(var(--button-height) - 1px);
+        --slider-value-height: 20px;
 
         /* swatches */
         --swatches-color: #303030;
@@ -52,7 +53,7 @@
 
         /* widget */
         --widget-width: calc(2 * var(--tab-height) + var(--canvas-size) + 2 * var(--button-width));
-        --widget-height: calc(var(--tab-height) + var(--canvas-size) + var(--button-height));
+        --widget-height: calc(var(--tab-height) + var(--canvas-size) + var(--button-height) + var(--slider-value-height));
       }
 
       body {
@@ -135,10 +136,11 @@
           " . cs cs cs sw sw  ."
           " . cs cs cs bc bc  ."
           " . cs cs cs bp bm  ."
-          " . sl sl sl br br  .";
+          " . sl sl sl br br  ."
+          " . sv sv sv  .  .  .";
         grid-template-rows:
           var(--tab-height) var(--tab-height) var(--tab-height) var(--tab-height) 1fr
-          var(--button-height) var(--button-height) var(--button-height);
+          var(--button-height) var(--button-height) var(--button-height) var(--slider-value-height);
         grid-template-columns:
           var(--tab-height) var(--tab-width) var(--tab-width) 1fr
           var(--button-width) var(--button-width) var(--tab-height);
@@ -175,6 +177,11 @@
       .widget .slider {
         grid-area: sl;
         margin-top: 1px;
+      }
+
+      .widget .slider-value {
+        grid-area: sv;
+        align-self: end;
       }
 
       .widget .swatches {
@@ -277,7 +284,7 @@
 
       .widget .map {
         grid-column: 2 / -2;
-        grid-row: 2 / -1;
+        grid-row: 2 / -2;
         background-color: var(--canvas-light-color);
       }
     </style>
@@ -290,7 +297,11 @@
       <button class="tab hl left active" data-owner="palette">H-L</button>
       <button class="tab cl left" data-owner="palette">C-L</button>
       <button class="tab hc left" data-owner="palette">H-C</button>
-      <input class="slider" data-owner="palette" type="range" value="50" min="0" max="100" step="0.1" />
+      <input id="slider" class="slider" data-owner="palette" type="range" value="50" min="0" max="132" step="0.1" />
+      <div class="slider-value" data-owner="palette">
+        <span id="slider-axis">Value: </span>
+        <span id="slider-value"></span>
+      </div>
       <div class="swatches" data-owner="palette"></div>
       <button class="button copy" data-owner="palette"><i class="fas fa-copy"></i> Copy</button>
       <button class="button plus" data-owner="palette"><i class="fas fa-plus"></i></button>
@@ -298,7 +309,7 @@
       <button class="button reset" data-owner="palette"><i class="fas fa-redo-alt"></i> Reset</button>
       <div id="canvas" class="canvas" data-owner="palette">
         <div class="pattern"></div>
-        <canvas id="colorspace"></canvas>
+        <canvas id="color-space"></canvas>
         <div class="gradient">
           <div class="handle" data-key="from"></div>
           <div class="handle" data-key="to"></div>
@@ -307,157 +318,8 @@
       <div class="map hidden" data-owner="visualized"></div>
     </div>
     <script src="js/color.js"></script>
+    <script src="js/main.js"></script>
     <script>
-      function select(selector) {
-        return [...document.querySelectorAll(selector)];
-      }
-
-      function isActive(element) {
-        return element.classList.contains("active");
-      }
-
-      function switchView(tab) {
-        if (isActive(tab)) return;
-        select("*[data-owner]").forEach(hide);
-        select(".tab[data-view]").forEach(deactivate);
-        activate(tab);
-        select(`*[data-owner=${tab.dataset.view}]`).forEach(show);
-
-        function activate(element) {
-          element.classList.add("active");
-        }
-
-        function deactivate(element) {
-          element.classList.remove("active");
-        }
-
-        function show(element) {
-          element.classList.remove("hidden");
-        }
-
-        function hide(element) {
-          element.classList.add("hidden");
-        }
-      }
-
-      function makeDraggable(element) {
-        const elementPos = { x: 0, y: 0 };
-        const cursorPos = { x: 0, y: 0 };
-        const key = element.dataset.key;
-        state[key] = state[key] || {};
-        element.addEventListener("mousedown", startDrag);
-
-        function startDrag(e) {
-          e.preventDefault();
-          elementPos.x = element.offsetLeft;
-          elementPos.y = element.offsetTop;
-          cursorPos.x = e.clientX;
-          cursorPos.y = e.clientY;
-          document.addEventListener("mouseup", endDrad);
-          document.addEventListener("mousemove", doDrag);
-        }
-
-        function limitPos(value) {
-          return value < 0 ? 0 : value <= canvasSize ? value : canvasSize;
-        }
-
-        function doDrag(e) {
-          e.preventDefault();
-          elementPos.x += e.clientX - cursorPos.x;
-          elementPos.y += e.clientY - cursorPos.y;
-          cursorPos.x = e.clientX;
-          cursorPos.y = e.clientY;
-          state[key].x = limitPos(elementPos.x);
-          state[key].y = limitPos(elementPos.y);
-          element.style.left = `${state[key].x}px`;
-          element.style.top = `${state[key].y}px`;
-        }
-
-        function endDrad() {
-          document.removeEventListener("mousemove", doDrag);
-          document.removeEventListener("mouseup", endDrad);
-        }
-      }
-
-      function renderColorSpace() {
-        const {
-          h: { min: xmin, max: xmax },
-          l: { min: ymin, max: ymax }
-        } = state.colorSpace.dimension;
-        const zv = state.zval;
-        const { width, height } = colorSpace;
-        const imgData = colorSpaceCtx.createImageData(width, height);
-        const clippedPixel = new Uint8Array(new ArrayBuffer(4));
-        clippedPixel.set([255, 0, 0, 0]);
-        const coloredPixel = new Uint8Array(new ArrayBuffer(4));
-        coloredPixel.set([0, 0, 0, 255]);
-        const minVal = -0.000005;
-        const maxVal = 1.000005;
-
-        const colorBuf = [0, 0, 0];
-        for (let x = 0; x < width; x++) {
-          const xv = xmin + (x * (xmax - xmin)) / width;
-          for (let y = 0; y < height; y++) {
-            const yv = ymin + (y * (ymax - ymin)) / height;
-            const idx = (x + y * width) * 4;
-            imgData.data.set(calcColor(xv, yv), idx);
-          }
-        }
-        colorSpaceCtx.putImageData(imgData, 0, 0);
-        // showGradient();
-
-        function calcColor(x, y) {
-          colorBuf[0] = y;
-          colorBuf[1] = zv;
-          colorBuf[2] = x;
-
-          lch2sRGB(colorBuf);
-          if (
-            colorBuf[0] >= minVal &&
-            colorBuf[0] <= maxVal &&
-            colorBuf[1] >= minVal &&
-            colorBuf[1] <= maxVal &&
-            colorBuf[2] >= minVal &&
-            colorBuf[2] <= maxVal
-          ) {
-            sRGBfloat2int(colorBuf, coloredPixel);
-            return coloredPixel;
-          }
-          return clippedPixel;
-        }
-      }
-
-      const state = {
-        colorSpace: {
-          dimension: {
-            h: { name: "hue", min: 0, max: 360, step: 0.1 },
-            c: { name: "chroma", min: 0, max: 135, step: 0.1 },
-            l: { name: "lightness", min: 0, max: 100, step: 0.1 }
-          },
-          axis: [
-            ["hlc", "hue-lightness"],
-            ["clh", "chroma-lightness"],
-            ["hcl", "hue-chroma"]
-          ]
-        },
-        zval: 42.32
-      };
-      const canvasSize = select("#canvas")[0].offsetWidth;
-      const colorSpace = select("#colorspace")[0];
-      colorSpace.width = colorSpace.height = canvasSize / 1;
-      const colorSpaceCtx = colorSpace.getContext("2d");
-      select(".tab[data-view]").forEach(el => el.addEventListener("click", () => switchView(el)));
-      select(".gradient .handle").forEach(makeDraggable);
-
-      select(".button.reset")[0].addEventListener("click", () => {
-        const t0 = performance.now();
-        // for (let i = 0; i < 100; ++i) {
-        renderColorSpace();
-        // }
-        const t1 = performance.now();
-        console.log(`renderColorSpace() took ${t1 - t0} milliseconds.`);
-      });
-      renderColorSpace();
     </script>
   </body>
 </html>
