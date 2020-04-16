@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+
+    <title>Color Picker Layout</title>
+    <meta name="description" content="Color Picker Layout" />
+    <meta name="author" content="eip" />
+    <style>
+      body,
+      button,
+      input {
+        font-family: -apple-system, blink, "Helvetica Neue", arial, sans-serif;
+        font-size: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div>
+      <button id="test" disabled onClick="test()">Run Test</button>
+      <input id="times" type="number" min="10" max="1000000" value="1000" />
+      <label for="times">times</label>
+    </div>
+    <div>
+      <p id="status"></p>
+    </div>
+
+    <script src="https://drafts.csswg.org/css-color-4/math.js" crossorigin="anonymous"></script>
+    <script src="https://drafts.csswg.org/css-color-4/conversions.js" crossorigin="anonymous"></script>
+    <script src="https://drafts.csswg.org/css-color-4/utilities.js" crossorigin="anonymous"></script>
+    <script src="color.js"></script>
+    <script>
+      const l = { min: 0, max: 100 };
+      const c = { min: 0, max: 132 };
+      const h = { min: 0, max: 360 };
+
+      function randomAx(axis) {
+        return axis.min + Math.random() * (axis.max - axis.min);
+      }
+
+      function randomLCH() {
+        return [randomAx(l), randomAx(c), randomAx(h)];
+      }
+
+      function test(times) {
+        if (!times) times = document.getElementById("times").value;
+        document.getElementById("status").innerText = `Running test  ${times} times...`;
+        setTimeout(runTest, 50, times);
+      }
+
+      function runTest(times) {
+        let errors = 0;
+        const t0 = performance.now();
+        for (let t = 0; t < times; t++) {
+          const lch = randomLCH();
+          const rgbGot = lch2sRGB([...lch]);
+          const rgbWant = LCH_to_sRGB([...lch]);
+          if (rgbGot.toString() !== rgbWant.toString()) {
+            errors++;
+            console.warn(`LCH(${lch}): got sRGB(${rgbGot}), want sRGB(${rgbWant})`);
+          }
+          if (errors >= 10) break;
+        }
+        const t1 = performance.now();
+        if (errors) {
+          document.getElementById(
+            "status"
+          ).innerText = `Test failed with ${errors} errors. See dev console for results.`;
+          return;
+        }
+        document.getElementById("status").innerText = `Test passed ${times} times in ${t1 - t0} ms.`;
+      }
+
+      document.getElementById("test").disabled = false;
+    </script>
+  </body>
+</html>
