@@ -61,11 +61,10 @@ function lch2sRGB(values) {
 }
 
 // Convert float sRGB values in the range 0.0-1.0 to integer values in the range 0-255
-function sRGBfloat2int(rgb) {
-  rgb[0] = (rgb[0] * 255 + 0.5) | 0;
-  rgb[1] = (rgb[1] * 255 + 0.5) | 0;
-  rgb[2] = (rgb[2] * 255 + 0.5) | 0;
-  return rgb;
+function sRGBfloat2int(rgb, buf) {
+  buf[0] = rgb[0] * 255 + 0.5;
+  buf[1] = rgb[1] * 255 + 0.5;
+  buf[2] = rgb[2] * 255 + 0.5;
 }
 
 if (typeof module === 'object' && module.exports) module.exports = { lch2sRGB, sRGBfloat2int };
