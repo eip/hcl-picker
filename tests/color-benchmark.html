@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+
+    <title>Color Picker Layout</title>
+    <meta name="description" content="Color Picker Layout" />
+    <meta name="author" content="eip" />
+    <style>
+      body,
+      button,
+      input {
+        font-family: -apple-system, blink, "Helvetica Neue", arial, sans-serif;
+        font-size: 100%;
+      }
+
+      /* canvas#color-space {
+        width: 420px;
+        height: 420px;
+      } */
+    </style>
+  </head>
+
+  <body>
+    <button id="test" disabled onClick="start(true)">Start Benchmark</button>
+    <div>
+      <canvas id="color-space"></canvas>
+    </div>
+    <div>
+      <p id="status"></p>
+    </div>
+
+    <script src="../js/color.js"></script>
+    <script>
+      const canvasSize = 420;
+      const testButton = document.getElementById("test");
+      const colorSpace = document.getElementById("color-space");
+      colorSpace.width = colorSpace.height = canvasSize;
+      const colorSpaceCtx = colorSpace.getContext("2d");
+      const status = document.getElementById("status");
+      const l = { min: 0, max: 100 };
+      const c = { min: 0, max: 132 };
+      const h = { min: 0, max: 360 };
+      let chroma = c.min;
+      let step = 1;
+      let firstFrameTime = 0;
+      let frames = 0;
+      let running = false;
+
+      function renderColorSpace(zv) {
+        const clippedPixel = new Uint8Array(new ArrayBuffer(4));
+        const coloredPixel = new Uint8Array(new ArrayBuffer(4));
+        const minChVal = -0.000005;
+        const maxChVal = 1.000005;
+        const { width, height } = colorSpace;
+        const imgData = colorSpaceCtx.createImageData(width, height);
+        clippedPixel.set([255, 0, 0, 0]);
+        coloredPixel.set([0, 0, 0, 255]);
+
+        const colorBuf = [0, 0, 0];
+        for (let x = 0; x < width; x++) {
+          const xv = h.min + (x * (h.max - h.min)) / width;
+          for (let y = 0; y < height; y++) {
+            const yv = l.min + (y * (l.max - l.min)) / height;
+            const idx = (x + y * width) * 4;
+            colorBuf[0] = yv;
+            colorBuf[1] = zv;
+            colorBuf[2] = xv;
+            imgData.data.set(calcColor(colorBuf), idx);
+            // imgData.data.set(coloredPixel, idx);
+          }
+        }
+        colorSpaceCtx.putImageData(imgData, 0, 0);
+
+        function calcColor(values) {
+          lch2sRGB(values);
+          if (
+            values[0] >= minChVal &&
+            values[0] <= maxChVal &&
+            values[1] >= minChVal &&
+            values[1] <= maxChVal &&
+            values[2] >= minChVal &&
+            values[2] <= maxChVal
+          ) {
+            sRGBfloat2int(values, coloredPixel);
+            return coloredPixel;
+          }
+          return clippedPixel;
+        }
+      }
+      function start(pause) {
+        if (pause === true) {
+          running = !running;
+          test.innerText = `${running ? "Stop" : "Start"} Benchmark`;
+        }
+        if (!firstFrameTime) {
+          firstFrameTime = performance.now();
+        } else {
+          const thisFrameTime = performance.now();
+          if (thisFrameTime - firstFrameTime < 500) {
+            frames++;
+          } else {
+            fps = (1000 * frames) / (thisFrameTime - firstFrameTime);
+            firstFrameTime = thisFrameTime;
+            frames = 0;
+            status.innerText = `FPS: ${fps.toFixed(1)}`;
+          }
+        }
+        renderColorSpace(chroma);
+        chroma += step;
+        if (chroma <= c.min || chroma >= c.max) step = -step;
+        if (running) window.requestAnimationFrame(start);
+      }
+
+      window.addEventListener("load", () => (testButton.disabled = false));
+    </script>
+  </body>
+</html>
