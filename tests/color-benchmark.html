@@ -14,16 +14,13 @@
         font-family: -apple-system, blink, "Helvetica Neue", arial, sans-serif;
         font-size: 100%;
       }
-
-      /* canvas#color-space {
-        width: 420px;
-        height: 420px;
-      } */
     </style>
   </head>
 
   <body>
     <button id="test" disabled onClick="start(true)">Start Benchmark</button>
+    <input id="clipped" type="checkbox" />
+    <label for="clipped">Hide clipped colors</label>
     <div>
       <canvas id="color-space"></canvas>
     </div>
@@ -35,6 +32,7 @@
     <script>
       const canvasSize = 420;
       const testButton = document.getElementById("test");
+      const clippedCheckbox = document.getElementById("clipped");
       const colorSpace = document.getElementById("color-space");
       colorSpace.width = colorSpace.height = canvasSize;
       const colorSpaceCtx = colorSpace.getContext("2d");
@@ -42,6 +40,20 @@
       const l = { min: 0, max: 100 };
       const c = { min: 0, max: 132 };
       const h = { min: 0, max: 360 };
+
+      const clippedPixel = new Uint8Array(new ArrayBuffer(4));
+      const coloredPixel = new Uint8Array(new ArrayBuffer(4));
+      clippedPixel.set([255, 0, 0, 0]);
+      coloredPixel.set([0, 0, 0, 255]);
+      const rgbColor = [0, 0, 0];
+      const rgbColorClipped = [0, 0, 0, 0];
+
+      const minChVal = -0.000005;
+      const maxChVal = 1.000005;
+
+      const { width: csWidth, height: csHeight } = colorSpace;
+      const imgData = colorSpaceCtx.createImageData(csWidth, csHeight);
+
       let chroma = c.min;
       let step = 1;
       let firstFrameTime = 0;
@@ -49,46 +61,27 @@
       let running = false;
 
       function renderColorSpace(zv) {
-        const clippedPixel = new Uint8Array(new ArrayBuffer(4));
-        const coloredPixel = new Uint8Array(new ArrayBuffer(4));
-        const minChVal = -0.000005;
-        const maxChVal = 1.000005;
-        const { width, height } = colorSpace;
-        const imgData = colorSpaceCtx.createImageData(width, height);
-        clippedPixel.set([255, 0, 0, 0]);
-        coloredPixel.set([0, 0, 0, 255]);
-
-        const colorBuf = [0, 0, 0];
-        for (let x = 0; x < width; x++) {
-          const xv = h.min + (x * (h.max - h.min)) / width;
-          for (let y = 0; y < height; y++) {
-            const yv = l.min + (y * (l.max - l.min)) / height;
-            const idx = (x + y * width) * 4;
+        const colorBuf = clippedCheckbox.checked ? rgbColorClipped : rgbColor;
+        for (let x = 0; x < csWidth; x++) {
+          const xv = h.min + (x * (h.max - h.min)) / csWidth;
+          for (let y = 0; y < csHeight; y++) {
+            const yv = l.min + (y * (l.max - l.min)) / csHeight;
+            const idx = (x + y * csWidth) * 4;
             colorBuf[0] = yv;
             colorBuf[1] = zv;
             colorBuf[2] = xv;
-            imgData.data.set(calcColor(colorBuf), idx);
-            // imgData.data.set(coloredPixel, idx);
+            let pixel = clippedPixel;
+            lch2sRGB(colorBuf);
+            if (colorBuf[3] !== 1) {
+              pixel = coloredPixel
+              sRGBfloat2int(colorBuf, pixel);
+            }
+            imgData.data.set(pixel, idx);
           }
         }
         colorSpaceCtx.putImageData(imgData, 0, 0);
-
-        function calcColor(values) {
-          lch2sRGB(values);
-          if (
-            values[0] >= minChVal &&
-            values[0] <= maxChVal &&
-            values[1] >= minChVal &&
-            values[1] <= maxChVal &&
-            values[2] >= minChVal &&
-            values[2] <= maxChVal
-          ) {
-            sRGBfloat2int(values, coloredPixel);
-            return coloredPixel;
-          }
-          return clippedPixel;
-        }
       }
+
       function start(pause) {
         if (pause === true) {
           running = !running;

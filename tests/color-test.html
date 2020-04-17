@@ -20,16 +20,19 @@
   <body>
     <div>
       <button id="test" disabled onClick="test()">Run Test</button>
-      <input id="times" type="number" min="10" max="1000000" value="1000" />
+      <input id="times" type="number" min="10" max="1000000" value="100000" />
       <label for="times">times</label>
     </div>
     <div>
       <p id="status"></p>
     </div>
 
-    <script src="https://drafts.csswg.org/css-color-4/math.js" crossorigin="anonymous"></script>
-    <script src="https://drafts.csswg.org/css-color-4/conversions.js" crossorigin="anonymous"></script>
-    <script src="https://drafts.csswg.org/css-color-4/utilities.js" crossorigin="anonymous"></script>
+    <!-- <script src="https://drafts.csswg.org/css-color-4/multiply-matrices.js" crossorigin="anonymous"></script>
+      <script src="https://drafts.csswg.org/css-color-4/conversions.js" crossorigin="anonymous"></script>
+      <script src="https://drafts.csswg.org/css-color-4/utilities.js" crossorigin="anonymous"></script> -->
+    <script src="./js/multiply-matrices.js"></script>
+    <script src="./js/conversions.js"></script>
+    <script src="./js/utilities.js"></script>
     <script src="../js/color.js"></script>
     <script>
       const l = { min: 0, max: 100 };
@@ -51,15 +54,19 @@
       }
 
       function runTest(times) {
+        const minVal = -0.000005;
+        const maxVal = 1.000005;
         let errors = 0;
         const t0 = performance.now();
         for (let t = 0; t < times; t++) {
           const lch = randomLCH();
           const rgbGot = lch2sRGB([...lch]);
           const rgbWant = LCH_to_sRGB([...lch]);
-          if (rgbGot.toString() !== rgbWant.toString()) {
+          for (let i = 0; i < 3; ++i) {
+            if (rgbWant[i] < minVal || rgbWant[i] > maxVal || rgbGot[i] === rgbWant[i]) continue;
             errors++;
             console.warn(`LCH(${lch}): got sRGB(${rgbGot}), want sRGB(${rgbWant})`);
+            break;
           }
           if (errors >= 10) break;
         }

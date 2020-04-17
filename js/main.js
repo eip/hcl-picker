@@ -28,6 +28,13 @@ const sliderValueLabel = select('#slider-value');
 const debugInfo = select('#debug-info');
 const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
 
+const clippedPixel = new Uint8Array(new ArrayBuffer(4));
+clippedPixel.set([255, 0, 0, 0]);
+const coloredPixel = new Uint8Array(new ArrayBuffer(4));
+coloredPixel.set([0, 0, 0, 255]);
+const rgbFloatColor = [0.0, 0.0, 0.0, 0];
+let imgData;
+
 function is(type, value) {
   return (
     ![undefined, null].includes(value) &&
@@ -119,10 +126,6 @@ function renderColorSpace() {
   // }
   // state.renderLastCall = timestamp;
 
-  const clippedPixel = new Uint8Array(new ArrayBuffer(4));
-  const coloredPixel = new Uint8Array(new ArrayBuffer(4));
-  const minChVal = -0.000005;
-  const maxChVal = 1.000005;
   const zv = state.zval;
 
   if (state.scale) {
@@ -133,6 +136,7 @@ function renderColorSpace() {
     while (state.scale < 4) {
       state.scale++;
       colorSpace.width = colorSpace.height = canvasSize / state.scale; // eslint-disable-line no-multi-assign
+      imgData = colorSpaceCtx.createImageData(colorSpace.width, colorSpace.height);
       const start = performance.now();
       doRender();
       if (performance.now() - start < 100) break;
@@ -149,43 +153,29 @@ function renderColorSpace() {
       h: { min: xmin, max: xmax },
       l: { min: ymin, max: ymax }
     } = state.colorSpace.dimension;
-    const { width, height } = colorSpace;
-    const imgData = colorSpaceCtx.createImageData(width, height);
-    clippedPixel.set([255, 0, 0, 0]);
-    coloredPixel.set([0, 0, 0, 255]);
 
     if (state.debug) state.renderStart = performance.now();
-    const colorBuf = [0, 0, 0];
+    const { width, height } = colorSpace;
     for (let x = 0; x < width; x++) {
       const xv = xmin + (x * (xmax - xmin)) / width;
       for (let y = 0; y < height; y++) {
         const yv = ymin + (y * (ymax - ymin)) / height;
         const idx = (x + y * width) * 4;
-        colorBuf[0] = yv;
-        colorBuf[1] = zv;
-        colorBuf[2] = xv;
-        imgData.data.set(calcColor(colorBuf), idx);
+        rgbFloatColor[0] = yv;
+        rgbFloatColor[1] = zv;
+        rgbFloatColor[2] = xv;
+        let pixel = clippedPixel;
+        lch2sRGB(rgbFloatColor);
+        if (rgbFloatColor[3] !== 1) {
+          pixel = coloredPixel;
+          sRGBfloat2int(rgbFloatColor, pixel);
+        }
+        imgData.data.set(pixel, idx);
       }
     }
     if (state.debug) state.renderTime = performance.now() - state.renderStart;
     colorSpaceCtx.putImageData(imgData, 0, 0);
     // showGradient();
-  }
-
-  function calcColor(values) {
-    lch2sRGB(values);
-    if (
-      values[0] >= minChVal &&
-      values[0] <= maxChVal &&
-      values[1] >= minChVal &&
-      values[1] <= maxChVal &&
-      values[2] >= minChVal &&
-      values[2] <= maxChVal
-    ) {
-      sRGBfloat2int(values, coloredPixel);
-      return coloredPixel;
-    }
-    return clippedPixel;
   }
 }
 
