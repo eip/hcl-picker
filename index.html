@@ -137,7 +137,7 @@
           " . cs cs cs bc bc  ."
           " . cs cs cs bp bm  ."
           " . sl sl sl br br  ."
-          " . sv sv sv  .  .  .";
+          " . sv sv di di di  .";
         grid-template-rows:
           var(--tab-height) var(--tab-height) var(--tab-height) var(--tab-height) 1fr
           var(--button-height) var(--button-height) var(--button-height) var(--slider-value-height);
@@ -284,6 +284,12 @@
         grid-area: br;
       }
 
+      .widget .debug-info {
+        grid-area: di;
+        align-self: end;
+        text-align: right;
+      }
+
       .widget .map {
         grid-column: 2 / -2;
         grid-row: 2 / -2;
@@ -304,6 +310,9 @@
         <span id="slider-axis">Value</span>:
         <span id="slider-value"></span>
       </div>
+      <div class="debug-info" data-owner="palette">
+        <span id="debug-info"></span>
+      </div>
       <div class="swatches" data-owner="palette"></div>
       <button class="button copy" data-owner="palette"><i class="fas fa-copy"></i> Copy</button>
       <button class="button plus" data-owner="palette"><i class="fas fa-plus"></i></button>
@@ -321,7 +330,5 @@
     </div>
     <script src="js/color.js"></script>
     <script src="js/main.js"></script>
-    <script>
-    </script>
   </body>
 </html>

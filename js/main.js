@@ -13,7 +13,7 @@ const state = {
   axes: 'hcl',
   from: '#c76584',
   to: '#30c2f8',
-  busy: false
+  debug: true
 };
 
 const canvasSize = select('#canvas').offsetWidth;
@@ -25,6 +25,7 @@ const sliderStepCoarse = sliderStep * 10;
 const sliderStepFine = sliderStep / 10;
 const sliderAxisLabel = select('#slider-axis');
 const sliderValueLabel = select('#slider-value');
+const debugInfo = select('#debug-info');
 const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
 
 function is(type, value) {
@@ -110,7 +111,10 @@ function makeDraggable(element) {
   }
 }
 
-function renderColorSpace() {
+function renderColorSpace(timestamp) {
+  if (timestamp && timestamp === state.renderLastCall) return;
+  state.renderLastCall = timestamp;
+
   const clippedPixel = new Uint8Array(new ArrayBuffer(4));
   const coloredPixel = new Uint8Array(new ArrayBuffer(4));
   const minChVal = -0.000005;
@@ -130,6 +134,7 @@ function renderColorSpace() {
   }
 
   function doRender() {
+    if (state.debug) state.renderStart = performance.now();
     const {
       h: { min: xmin, max: xmax },
       l: { min: ymin, max: ymax }
@@ -154,6 +159,7 @@ function renderColorSpace() {
     }
     colorSpaceCtx.putImageData(imgData, 0, 0);
     // showGradient();
+    if (state.debug) state.renderTime = performance.now() - state.renderStart;
   }
 
   function calcColor(values) {
@@ -221,15 +227,8 @@ slider.addEventListener('keydown', e => {
 slider.addEventListener('input', () => {
   state.zval = parseFloat(slider.value);
   sliderValueLabel.innerText = slider.value;
-  if (state.busy) return;
-  state.busy = true;
-  setTimeout(() => {
-    const t0 = performance.now();
-    renderColorSpace();
-    state.busy = false;
-    const t1 = performance.now();
-    console.log(`renderColorSpace() took ${t1 - t0} milliseconds.`);
-  }, 1);
+  if (state.debug && state.renderTime) debugInfo.innerText = `rendered in ${state.renderTime.toFixed(1)} ms`;
+  window.requestAnimationFrame(renderColorSpace);
 });
 
 select('.tab[data-view]').forEach(el => el.addEventListener('click', () => switchView(el)));
