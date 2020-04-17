@@ -111,40 +111,50 @@ function makeDraggable(element) {
   }
 }
 
-function renderColorSpace(timestamp) {
-  if (timestamp && timestamp === state.renderLastCall) return;
-  state.renderLastCall = timestamp;
+function renderColorSpace() {
+  // if (timestamp && timestamp === state.renderLastCall) return;
+  // if (timestamp && timestamp === state.renderLastCall) {
+  //   console.log(timestamp);
+  //   return;
+  // }
+  // state.renderLastCall = timestamp;
 
   const clippedPixel = new Uint8Array(new ArrayBuffer(4));
   const coloredPixel = new Uint8Array(new ArrayBuffer(4));
   const minChVal = -0.000005;
   const maxChVal = 1.000005;
+  const zv = state.zval;
 
   if (state.scale) {
     doRender();
-    return;
+  } else {
+    // adjust the scale until rendering time is less than 100 ms
+    state.scale = 0;
+    while (state.scale < 4) {
+      state.scale++;
+      colorSpace.width = colorSpace.height = canvasSize / state.scale; // eslint-disable-line no-multi-assign
+      const start = performance.now();
+      doRender();
+      if (performance.now() - start < 100) break;
+    }
   }
-  state.scale = 0;
-  while (state.scale < 4) {
-    state.scale++;
-    colorSpace.width = colorSpace.height = canvasSize / state.scale; // eslint-disable-line no-multi-assign
-    const start = performance.now();
-    doRender();
-    if (performance.now() - start < 100) break;
+  if (zv !== state.zval) {
+    window.requestAnimationFrame(renderColorSpace);
+  } else {
+    state.busy = false;
   }
 
   function doRender() {
-    if (state.debug) state.renderStart = performance.now();
     const {
       h: { min: xmin, max: xmax },
       l: { min: ymin, max: ymax }
     } = state.colorSpace.dimension;
-    const zv = state.zval;
     const { width, height } = colorSpace;
     const imgData = colorSpaceCtx.createImageData(width, height);
     clippedPixel.set([255, 0, 0, 0]);
     coloredPixel.set([0, 0, 0, 255]);
 
+    if (state.debug) state.renderStart = performance.now();
     const colorBuf = [0, 0, 0];
     for (let x = 0; x < width; x++) {
       const xv = xmin + (x * (xmax - xmin)) / width;
@@ -157,9 +167,9 @@ function renderColorSpace(timestamp) {
         imgData.data.set(calcColor(colorBuf), idx);
       }
     }
+    if (state.debug) state.renderTime = performance.now() - state.renderStart;
     colorSpaceCtx.putImageData(imgData, 0, 0);
     // showGradient();
-    if (state.debug) state.renderTime = performance.now() - state.renderStart;
   }
 
   function calcColor(values) {
@@ -228,7 +238,10 @@ slider.addEventListener('input', () => {
   state.zval = parseFloat(slider.value);
   sliderValueLabel.innerText = slider.value;
   if (state.debug && state.renderTime) debugInfo.innerText = `rendered in ${state.renderTime.toFixed(1)} ms`;
-  window.requestAnimationFrame(renderColorSpace);
+  if (!state.busy) {
+    window.requestAnimationFrame(renderColorSpace);
+    state.busy = true;
+  }
 });
 
 select('.tab[data-view]').forEach(el => el.addEventListener('click', () => switchView(el)));
