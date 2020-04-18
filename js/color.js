@@ -50,11 +50,31 @@ function lch2sRGB(values) {
 
   // Convert linear-light sRGB values in the range 0.0-1.0 to gamma corrected form
   // https://en.wikipedia.org/wiki/SRGB
+  const minVal = -0.000000386996904; // -0.000005 / 12.92;
+  const maxVal = 1.0000113744453183; // ((1.000005 + 0.055) / 1.055) ** 2.4
   const pow = 0.4166666666666667; // 1/2.4
-  values[0] = values[0] > 0.0031308 ? 1.055 * values[0] ** pow - 0.055 : values[0] * 12.92;
-  values[1] = values[1] > 0.0031308 ? 1.055 * values[1] ** pow - 0.055 : values[1] * 12.92;
-  values[2] = values[2] > 0.0031308 ? 1.055 * values[2] ** pow - 0.055 : values[2] * 12.92;
-
+  if (values.length < 4) {
+    for (let i = 0; i < 3; ++i) {
+      if (values[i] < minVal) {
+        values[i] = 0;
+      } else if (values[i] > maxVal) {
+        values[i] = 1;
+      } else {
+        values[i] = values[i] > 0.0031308 ? 1.055 * values[i] ** pow - 0.055 : values[i] * 12.92;
+      }
+    }
+  } else {
+    values[3] = 0;
+    for (let i = 0; i < 3; ++i) {
+      if (values[i] >= minVal && values[i] <= maxVal) {
+        // not clipped
+        values[i] = values[i] > 0.0031308 ? 1.055 * values[i] ** pow - 0.055 : values[i] * 12.92;
+        continue; // eslint-disable-line no-continue
+      }
+      values[i] = 0; // clipped
+      values[3] = 1;
+    }
+  }
   return values;
 }
 
@@ -64,9 +84,9 @@ function sRGB2lch(values) {
   // to linear light (un-companded) form.
   // https://en.wikipedia.org/wiki/SRGB
   const pow = 2.4;
-  values[0] = values[0] < 0.04045 ? values[0] / 12.92 : ((values[0] + 0.055) / 1.055) ** pow;
-  values[1] = values[1] < 0.04045 ? values[1] / 12.92 : ((values[1] + 0.055) / 1.055) ** pow;
-  values[2] = values[2] < 0.04045 ? values[2] / 12.92 : ((values[2] + 0.055) / 1.055) ** pow;
+  for (let i = 0; i < 3; ++i) {
+    values[i] = values[i] < 0.04045 ? values[i] / 12.92 : ((values[i] + 0.055) / 1.055) ** pow;
+  }
 
   // convert an array of linear-light sRGB values to CIE XYZ
   // using sRGB's own white, D65 (no chromatic adaptation)
