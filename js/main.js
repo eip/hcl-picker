@@ -10,13 +10,18 @@ const state = {
       h: { name: 'hue', index: 2, min: 0, max: 360, step: 0.5 }
     }
   },
-  axes: 'hcl',
+  axes: 'hlc',
   from: '#c76584',
   to: '#30c2f8',
+  steps: 5,
   debug: true
 };
 
-const canvasSize = select('#canvas').offsetWidth;
+const docStyle = getComputedStyle(document.body);
+const canvasSize = parseFloat(docStyle.getPropertyValue('--canvas-size'));
+const handleSize = parseFloat(docStyle.getPropertyValue('--gradient-handle-size'));
+const swatchSize = (handleSize * 0.65) | 0;
+const gradientSize = canvasSize + handleSize;
 const colorSpace = select('#color-space');
 const colorSpaceCtx = colorSpace.getContext('2d');
 const slider = select('#slider');
@@ -26,20 +31,19 @@ const sliderStepFine = sliderStep / 10;
 const sliderAxisLabel = select('#slider-axis');
 const sliderValueLabel = select('#slider-value');
 const debugInfo = select('#debug-info');
+
 const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
 
 const clippedPixel = new Uint8Array(new ArrayBuffer(4));
 clippedPixel.set([255, 0, 0, 0]);
 const coloredPixel = new Uint8Array(new ArrayBuffer(4));
 coloredPixel.set([0, 0, 0, 255]);
-const rgbFloatColor = [0.0, 0.0, 0.0, 0];
+const floatColorClipped = [0.0, 0.0, 0.0, 0];
+const floatColor = [0.0, 0.0, 0.0];
 let imgData;
 
 function is(type, value) {
-  return (
-    ![undefined, null].includes(value) &&
-    (typeof type === 'string' ? value.constructor.name : value.constructor) === type
-  );
+  return ![undefined, null].includes(value) && (typeof type === 'string' ? value.constructor.name : value.constructor) === type;
 }
 
 function capitalize(str) {
@@ -55,6 +59,14 @@ function isActive(element) {
   return element.classList.contains('active');
 }
 
+function show(element) {
+  element.classList.remove('hidden');
+}
+
+function hide(element) {
+  element.classList.add('hidden');
+}
+
 function switchView(tab) {
   if (isActive(tab)) return;
   select('*[data-owner]').forEach(hide);
@@ -68,14 +80,6 @@ function switchView(tab) {
 
   function deactivate(element) {
     element.classList.remove('active');
-  }
-
-  function show(element) {
-    element.classList.remove('hidden');
-  }
-
-  function hide(element) {
-    element.classList.add('hidden');
   }
 }
 
@@ -106,10 +110,14 @@ function makeDraggable(element) {
     elementPos.y += e.clientY - cursorPos.y;
     cursorPos.x = e.clientX;
     cursorPos.y = e.clientY;
-    state[key].x = limitPos(elementPos.x);
-    state[key].y = limitPos(elementPos.y);
-    element.style.left = `${state[key].x}px`;
-    element.style.top = `${state[key].y}px`;
+
+    const x = limitPos(elementPos.x);
+    const y = limitPos(elementPos.y);
+    state[key][0] = posUnscale(x, state.colorSpace.dimension[state.ax]);
+    state[key][1] = posUnscale(y, state.colorSpace.dimension[state.ay]);
+    element.style.left = `${x}px`;
+    element.style.top = `${y}px`;
+    updateColors();
   }
 
   function endDrad() {
@@ -119,13 +127,6 @@ function makeDraggable(element) {
 }
 
 function renderColorSpace() {
-  // if (timestamp && timestamp === state.renderLastCall) return;
-  // if (timestamp && timestamp === state.renderLastCall) {
-  //   console.log(timestamp);
-  //   return;
-  // }
-  // state.renderLastCall = timestamp;
-
   const zv = state.zval;
 
   if (state.scale) {
@@ -161,39 +162,133 @@ function renderColorSpace() {
       for (let y = 0; y < height; y++) {
         const yv = ymin + (y * (ymax - ymin)) / height;
         const idx = (x + y * width) * 4;
-        rgbFloatColor[0] = yv;
-        rgbFloatColor[1] = zv;
-        rgbFloatColor[2] = xv;
+        floatColorClipped[0] = yv;
+        floatColorClipped[1] = zv;
+        floatColorClipped[2] = xv;
         let pixel = clippedPixel;
-        lch2sRGB(rgbFloatColor);
-        if (rgbFloatColor[3] !== 1) {
+        lch2sRGB(floatColorClipped);
+        if (floatColorClipped[3] !== 1) {
           pixel = coloredPixel;
-          sRGBfloat2int(rgbFloatColor, pixel);
+          sRGBfloat2int(floatColorClipped, pixel);
         }
         imgData.data.set(pixel, idx);
       }
     }
     if (state.debug) state.renderTime = performance.now() - state.renderStart;
     colorSpaceCtx.putImageData(imgData, 0, 0);
-    // showGradient();
+    updateColors();
   }
+}
+
+function posScale(val, { min, max }, offset = 0) {
+  return ((val - min) * canvasSize) / (max - min) + offset;
+}
+
+function posUnscale(val, { min, max }) {
+  return (val * (max - min)) / canvasSize + min;
+}
+
+function getColor([x, y]) {
+  const [ix, iy, iz] = [...state.axes].map(a => 'lch'.indexOf(a));
+  floatColor[ix] = x;
+  floatColor[iy] = y;
+  floatColor[iz] = state.zval;
+  lch2sRGB(floatColor);
+  sRGBfloat2int(floatColor, coloredPixel);
+  return `#${hex(coloredPixel[0])}${hex(coloredPixel[1])}${hex(coloredPixel[2])}`;
+
+  function hex(num) {
+    const result = num.toString(16);
+    return result.length === 1 ? `0${result}` : result;
+  }
+}
+
+function positionHandles() {
+  const xdim = state.colorSpace.dimension[state.ax];
+  const ydim = state.colorSpace.dimension[state.ay];
+  const [handleFrom, handleTo] = select('.gradient .handle');
+  handleFrom.style.left = `${posScale(state.from[0], xdim)}px`;
+  handleFrom.style.top = `${posScale(state.from[1], ydim)}px`;
+  handleTo.style.left = `${posScale(state.to[0], xdim)}px`;
+  handleTo.style.top = `${posScale(state.to[1], ydim)}px`;
+}
+
+function updateColors() {
+  if (!state.colors) state.colors = [];
+  state.colors.length = state.steps;
+  state.colors[0] = getColor(state.from);
+  state.colors[state.steps - 1] = getColor(state.to);
+  select('.gradient .handle').forEach(e => (e.style.backgroundColor = state.colors[e.dataset.key === 'from' ? 0 : state.steps - 1]));
+  const xdim = state.colorSpace.dimension[state.ax];
+  const ydim = state.colorSpace.dimension[state.ay];
+  const line = select('.gradient svg[data-key=line] line', 1);
+  const offset = handleSize / 2;
+  line.setAttributeNS(null, 'x1', posScale(state.from[0], xdim, offset));
+  line.setAttributeNS(null, 'y1', posScale(state.from[1], ydim, offset));
+  line.setAttributeNS(null, 'x2', posScale(state.to[0], xdim, offset));
+  line.setAttributeNS(null, 'y2', posScale(state.to[1], ydim, offset));
+  const swatches = select('.gradient svg[data-key=swatches] circle');
+  if (swatches.length > state.steps - 2) {
+    for (let i = state.steps - 2; i < swatches.length; ++i) swatches[i].remove();
+    swatches.length = state.steps - 2;
+  }
+  if (swatches.length < state.steps - 2) {
+    const swatchSvg = select('.gradient svg[data-key=swatches]', 1);
+    for (let i = swatches.length; i < state.steps - 2; ++i) {
+      const swatch = document.createElementNS(swatchSvg.namespaceURI, 'circle');
+      swatch.setAttributeNS(null, 'r', swatchSize / 2);
+      swatchSvg.appendChild(swatch);
+      swatches.push(swatch);
+    }
+  }
+  for (let i = 1; i < state.steps - 1; ++i) {
+    const x = state.from[0] + ((state.to[0] - state.from[0]) * i) / (state.steps - 1);
+    const y = state.from[1] + ((state.to[1] - state.from[1]) * i) / (state.steps - 1);
+    state.colors[i] = getColor([x, y]);
+    swatches[i - 1].setAttributeNS(null, 'cx', posScale(x, xdim, offset));
+    swatches[i - 1].setAttributeNS(null, 'cy', posScale(y, ydim, offset));
+    swatches[i - 1].style.fill = state.colors[i];
+  }
+
+  // line.setAttributeNS(null, 'x1', posScale(state.from[0], xdim, offset));
+  // line.setAttributeNS(null, 'y1', posScale(state.from[1], ydim, offset) - 20);
+  // line.setAttributeNS(null, 'x2', posScale(state.from[0], xdim, offset));
+  // line.setAttributeNS(null, 'y2', posScale(state.from[1], ydim, offset) + 20);
 }
 
 function updateAxes(axes) {
   state.axes = axes;
   [state.ax, state.ay, state.az] = axes;
+  const [ix, iy, iz] = [...axes].map(a => 'lch'.indexOf(a));
+  if (is(String, state.from)) {
+    const lch = sRGBhex2lch(state.from);
+    state.from = [lch[ix], lch[iy]];
+    state.zval = lch[iz];
+  }
+  if (is(String, state.to)) {
+    const lch = sRGBhex2lch(state.to);
+    state.to = [lch[ix], lch[iy]];
+  }
+
   const zdim = state.colorSpace.dimension[state.az];
   sliderAxisLabel.innerText = capitalize(zdim.name);
+  slider.min = zdim.min;
+  slider.max = zdim.max;
   slider.step = zdim.step / 1000;
-  slider.value = state.from[zdim.index].toFixed(Math.round(-Math.log10(slider.step)));
+  slider.value = state.zval.toFixed(Math.round(-Math.log10(slider.step)));
   slider.dispatchEvent(new InputEvent('input'));
   slider.step = zdim.step;
+  positionHandles();
+  updateColors();
 }
 
 function init() {
-  state.from = is(String, state.from) ? sRGBhex2lch(state.from) : state.from;
-  state.to = is(String, state.to) ? sRGBhex2lch(state.to) : state.to;
+  select('.gradient svg').forEach(e => {
+    e.setAttributeNS(null, 'width', gradientSize);
+    e.setAttributeNS(null, 'height', gradientSize);
+  });
   updateAxes(state.axes);
+  show(select('.gradient', 1));
 }
 
 window.addEventListener('load', init);
