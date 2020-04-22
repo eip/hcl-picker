@@ -19,7 +19,6 @@
       input,
       select {
         font: var(--main-font);
-        font-size: var(--font-size);
       }
 
       .widget {
@@ -83,6 +82,7 @@
       const loResCheckbox = document.getElementById("loRes");
       const clippedCheckbox = document.getElementById("clipped");
       const testButton = document.getElementById("test");
+      const isSafari = navigator.vendor.toLowerCase().startsWith('apple');
       const colorSpace = document.getElementById("color-space");
       let scale = 1;
       const canvasSize = colorSpace.offsetWidth;
@@ -108,6 +108,7 @@
       let frame = 0;
       let running = false;
 
+      if (isSafari) librarySelect.style.fontSize = '1.2em';
       let imgData = colorSpaceCtx.createImageData(csWidth, csHeight);
       const render = { internal: renderInternal, chromaJs: renderChromaJs, cssColor4: renderCssColor4 };
 
