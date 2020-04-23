@@ -41,6 +41,8 @@
 
         /* swatches */
         --swatches-color: #303030;
+        --swatch-width: 40px;
+        --swatch-height: 30px;
 
         /* canvas */
         --canvas-size: 420px;
@@ -127,7 +129,6 @@
 
       .widget {
         display: grid;
-        grid-gap: 0;
         grid-template-areas:
           " . cp vs  .  .  .  ."
           "hl cs cs cs sw sw  ."
@@ -189,6 +190,16 @@
       .widget .swatches {
         grid-area: sw;
         background-color: var(--swatches-color);
+        display: grid;
+        grid-template-columns: var(--swatch-width) 1fr;
+        grid-auto-rows: var(--swatch-height);
+        padding: 10px;
+        overflow-y: scroll;
+      }
+
+      .widget .swatches label {
+        margin-left: 10px;
+        line-height: var(--swatch-height);
       }
 
       .widget .button {
@@ -340,7 +351,7 @@
       <div id="canvas" class="canvas" data-owner="palette">
         <div class="pattern"></div>
         <canvas id="color-space"></canvas>
-        <div class="gradient hidden">
+        <div class="gradient">
           <svg data-key="line">
             <line x1="-1" y1="-1" x2="-1" y2="-1"></line>
           </svg>
@@ -351,7 +362,7 @@
       </div>
       <div class="map hidden" data-owner="visualized"></div>
     </div>
-    <input id="clipboard" type="text"/>
+    <input id="clipboard" type="text" />
     <script src="js/color.js"></script>
     <script src="js/main.js"></script>
   </body>

@@ -227,27 +227,51 @@ function updateColors() {
   line.setAttributeNS(null, 'y1', posScale(state.from[1], ydim, offset));
   line.setAttributeNS(null, 'x2', posScale(state.to[0], xdim, offset));
   line.setAttributeNS(null, 'y2', posScale(state.to[1], ydim, offset));
-  const swatches = select('.gradient svg[data-key=swatches] circle');
-  if (swatches.length > state.steps - 2) {
-    for (let i = state.steps - 2; i < swatches.length; ++i) swatches[i].remove();
-    swatches.length = state.steps - 2;
+  const spots = select('.gradient svg[data-key=swatches] circle');
+  if (spots.length > state.steps - 2) {
+    for (let i = state.steps - 2; i < spots.length; ++i) spots[i].remove();
+    spots.length = state.steps - 2;
   }
-  if (swatches.length < state.steps - 2) {
+  if (spots.length < state.steps - 2) {
     const swatchSvg = select('.gradient svg[data-key=swatches]', 1);
-    for (let i = swatches.length; i < state.steps - 2; ++i) {
+    for (let i = spots.length; i < state.steps - 2; ++i) {
       const swatch = document.createElementNS(swatchSvg.namespaceURI, 'circle');
       swatch.setAttributeNS(null, 'r', swatchSize / 2);
       swatchSvg.appendChild(swatch);
-      swatches.push(swatch);
+      spots.push(swatch);
     }
   }
-  for (let i = 1; i < state.steps - 1; ++i) {
-    const x = state.from[0] + ((state.to[0] - state.from[0]) * i) / (state.steps - 1);
-    const y = state.from[1] + ((state.to[1] - state.from[1]) * i) / (state.steps - 1);
-    state.colors[i] = getColor([x, y]);
-    swatches[i - 1].setAttributeNS(null, 'cx', posScale(x, xdim, offset));
-    swatches[i - 1].setAttributeNS(null, 'cy', posScale(y, ydim, offset));
-    swatches[i - 1].style.fill = state.colors[i];
+  const swatches = select('.swatches div');
+  const labels = select('.swatches label');
+  if (swatches.length > state.steps) {
+    for (let i = state.steps; i < swatches.length; ++i) {
+      swatches[i].remove();
+      labels[i].remove();
+    }
+    swatches.length = labels.length = state.steps; // eslint-disable-line no-multi-assign
+  }
+  if (swatches.length < state.steps) {
+    const parent = select('.swatches', 1);
+    for (let i = swatches.length; i < state.steps; ++i) {
+      const swatch = document.createElement('div');
+      parent.appendChild(swatch);
+      swatches.push(swatch);
+      const label = document.createElement('label');
+      parent.appendChild(label);
+      labels.push(label);
+    }
+  }
+  for (let i = 0; i < state.steps; ++i) {
+    if (i >= 1 && i < state.steps - 1) {
+      const x = state.from[0] + ((state.to[0] - state.from[0]) * i) / (state.steps - 1);
+      const y = state.from[1] + ((state.to[1] - state.from[1]) * i) / (state.steps - 1);
+      state.colors[i] = getColor([x, y]);
+      spots[i - 1].setAttributeNS(null, 'cx', posScale(x, xdim, offset));
+      spots[i - 1].setAttributeNS(null, 'cy', posScale(y, ydim, offset));
+      spots[i - 1].style.fill = state.colors[i];
+    }
+    swatches[i].style.backgroundColor = state.colors[i];
+    labels[i].innerText = state.colors[i];
   }
 
   // line.setAttributeNS(null, 'x1', posScale(state.from[0], xdim, offset));
@@ -288,7 +312,6 @@ function init() {
     e.setAttributeNS(null, 'height', gradientSize);
   });
   updateAxes(state.axes);
-  show(select('.gradient', 1));
 }
 
 window.addEventListener('load', init);
