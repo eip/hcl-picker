@@ -332,11 +332,25 @@ slider.addEventListener('input', () => {
 select('.tab[data-view]').forEach(el => el.addEventListener('click', () => switchView(el)));
 select('.gradient .handle').forEach(makeDraggable);
 
+select('.button.copy', 1).addEventListener('click', () => {
+  const clipboard = select('#clipboard');
+  clipboard.value = state.colors.join(', ');
+  clipboard.select();
+  document.execCommand('copy');
+});
+
+select('.button.plus', 1).addEventListener('click', () => {
+  state.steps++;
+  if (state.steps > 12) state.steps = 12;
+  updateColors();
+});
+
+select('.button.minus', 1).addEventListener('click', () => {
+  state.steps--;
+  if (state.steps < 3) state.steps = 3;
+  updateColors();
+});
+
 select('.button.reset', 1).addEventListener('click', () => {
-  const t0 = performance.now();
-  // for (let i = 0; i < 100; ++i) {
-  renderColorSpace();
-  // }
-  const t1 = performance.now();
-  console.log(`renderColorSpace() took ${t1 - t0} milliseconds.`);
+  [window.location.href] = window.location.href.split('#');
 });

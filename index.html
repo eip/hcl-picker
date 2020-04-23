@@ -304,6 +304,11 @@
         text-align: right;
       }
 
+      #clipboard {
+        position: fixed;
+        top: -100px;
+      }
+
       .widget .map {
         grid-column: 2 / -2;
         grid-row: 2 / -2;
@@ -346,6 +351,7 @@
       </div>
       <div class="map hidden" data-owner="visualized"></div>
     </div>
+    <input id="clipboard" type="text"/>
     <script src="js/color.js"></script>
     <script src="js/main.js"></script>
   </body>
