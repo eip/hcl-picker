@@ -41,6 +41,7 @@ coloredPixel.set([0, 0, 0, 255]);
 const floatColorClipped = [0.0, 0.0, 0.0, 0];
 const floatColor = [0.0, 0.0, 0.0];
 let imgData;
+let locationTimer = null;
 
 function is(type, value) {
   return ![undefined, null].includes(value) && (typeof type === 'string' ? value.constructor.name : value.constructor) === type;
@@ -275,6 +276,11 @@ function updateColors() {
     swatches[i].style.backgroundColor = state.colors[i];
     labels[i].innerText = state.colors[i];
   }
+  if (locationTimer) clearTimeout(locationTimer);
+  locationTimer = setTimeout(() => {
+    locationTimer = null;
+    updateLocation();
+  }, 300);
 }
 
 function updateAxes(axes) {
@@ -313,7 +319,24 @@ function updateAxes(axes) {
   updateColors();
 }
 
+function updateStateFromLocation() {
+  const { hash } = window.location;
+  if (!hash) return;
+  const [axes, steps, from, to] = hash.slice(1).split('/');
+  if (select('.tab[data-axes]').some(e => e.dataset.axes === axes)) state.axes = axes;
+  const numSteps = parseInt(steps, 10);
+  if (numSteps >= 3 && numSteps <= 12) state.steps = numSteps;
+  const colorRe = /^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+  if (colorRe.test(from)) state.from = from;
+  if (colorRe.test(to)) state.to = to;
+}
+
+function updateLocation() {
+  window.location.hash = `#${state.axes}/${state.steps}/${state.colors[0].slice(1)}/${state.colors[state.colors.length - 1].slice(1)}`;
+}
+
 function init() {
+  updateStateFromLocation();
   select('.gradient svg').forEach(e => {
     e.setAttributeNS(null, 'width', gradientSize);
     e.setAttributeNS(null, 'height', gradientSize);
