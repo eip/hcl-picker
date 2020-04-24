@@ -125,7 +125,7 @@ input[type="range"]:focus::-moz-range-thumb {
     "hc cs cs cs sw sw  ."
     " . cs cs cs sw sw  ."
     " . cs cs cs bc bc  ."
-    " . cs cs cs bp bm  ."
+    " . cs cs cs bm bp  ."
     " . sl sl sl br br  ."
     " . sv sv di di di  .";
   grid-template-rows:
@@ -286,12 +286,12 @@ input[type="range"]:focus::-moz-range-thumb {
   grid-area: bc;
 }
 
-.widget .plus {
-  grid-area: bp;
-}
-
 .widget .minus {
   grid-area: bm;
+}
+
+.widget .plus {
+  grid-area: bp;
 }
 
 .widget .reset {

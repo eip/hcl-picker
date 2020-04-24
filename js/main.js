@@ -31,6 +31,7 @@ const sliderStepFine = sliderStep / 10;
 const sliderAxisLabel = select('#slider-axis');
 const sliderValueLabel = select('#slider-value');
 const debugInfo = select('#debug-info');
+const [minSteps, maxSteps] = [3, 12];
 
 const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
 
@@ -325,7 +326,7 @@ function updateStateFromLocation() {
   const [axes, steps, from, to] = hash.slice(1).split('/');
   if (select('.tab[data-axes]').some(e => e.dataset.axes === axes)) state.axes = axes;
   const numSteps = parseInt(steps, 10);
-  if (numSteps >= 3 && numSteps <= 12) state.steps = numSteps;
+  if (numSteps >= minSteps && numSteps <= maxSteps) state.steps = numSteps;
   const colorRe = /^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
   if (colorRe.test(from)) state.from = from;
   if (colorRe.test(to)) state.to = to;
@@ -395,15 +396,15 @@ select('.button.copy', 1).addEventListener('click', () => {
   document.execCommand('copy');
 });
 
-select('.button.plus', 1).addEventListener('click', () => {
-  state.steps++;
-  if (state.steps > 12) state.steps = 12;
+select('.button.minus', 1).addEventListener('click', () => {
+  state.steps--;
+  if (state.steps < minSteps) state.steps = minSteps;
   updateColors();
 });
 
-select('.button.minus', 1).addEventListener('click', () => {
-  state.steps--;
-  if (state.steps < 3) state.steps = 3;
+select('.button.plus', 1).addEventListener('click', () => {
+  state.steps++;
+  if (state.steps > maxSteps) state.steps = maxSteps;
   updateColors();
 });
 
