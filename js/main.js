@@ -273,11 +273,6 @@ function updateColors() {
     swatches[i].style.backgroundColor = state.colors[i];
     labels[i].innerText = state.colors[i];
   }
-
-  // line.setAttributeNS(null, 'x1', posScale(state.from[0], xdim, offset));
-  // line.setAttributeNS(null, 'y1', posScale(state.from[1], ydim, offset) - 20);
-  // line.setAttributeNS(null, 'x2', posScale(state.from[0], xdim, offset));
-  // line.setAttributeNS(null, 'y2', posScale(state.from[1], ydim, offset) + 20);
 }
 
 function updateAxes(axes) {
