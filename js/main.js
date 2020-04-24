@@ -59,6 +59,14 @@ function isActive(element) {
   return element.classList.contains('active');
 }
 
+function activate(element) {
+  element.classList.add('active');
+}
+
+function deactivate(element) {
+  element.classList.remove('active');
+}
+
 function show(element) {
   element.classList.remove('hidden');
 }
@@ -73,14 +81,13 @@ function switchView(tab) {
   select('.tab[data-view]').forEach(deactivate);
   activate(tab);
   select(`*[data-owner=${tab.dataset.view}]`).forEach(show);
+}
 
-  function activate(element) {
-    element.classList.add('active');
-  }
-
-  function deactivate(element) {
-    element.classList.remove('active');
-  }
+function switchAxes(tab) {
+  if (isActive(tab)) return;
+  select('.tab[data-axes]').forEach(deactivate);
+  activate(tab);
+  updateAxes(tab.dataset.axes);
 }
 
 function makeDraggable(element) {
@@ -150,9 +157,10 @@ function renderColorSpace() {
   }
 
   function doRender() {
+    const [ix, iy, iz] = [...state.axes].map(a => 'lch'.indexOf(a));
     const {
-      h: { min: xmin, max: xmax },
-      l: { min: ymin, max: ymax }
+      [state.ax]: { min: xmin, max: xmax },
+      [state.ay]: { min: ymin, max: ymax }
     } = state.colorSpace.dimension;
 
     if (state.debug) state.renderStart = performance.now();
@@ -162,9 +170,9 @@ function renderColorSpace() {
       for (let y = 0; y < height; y++) {
         const yv = ymin + (y * (ymax - ymin)) / height;
         const idx = (x + y * width) * 4;
-        floatColorClipped[0] = yv;
-        floatColorClipped[1] = zv;
-        floatColorClipped[2] = xv;
+        floatColorClipped[ix] = xv;
+        floatColorClipped[iy] = yv;
+        floatColorClipped[iz] = zv;
         let pixel = clippedPixel;
         lch2sRGB(floatColorClipped);
         if (floatColorClipped[3] !== 1) {
@@ -276,18 +284,30 @@ function updateColors() {
 }
 
 function updateAxes(axes) {
-  state.axes = axes;
-  [state.ax, state.ay, state.az] = axes;
-  const [ix, iy, iz] = [...axes].map(a => 'lch'.indexOf(a));
+  if (state.axes === axes && is(Array, state.from) && is(Array, state.to)) return;
+  const prevZ = state.zval;
   if (is(String, state.from)) {
+    const [ix, iy, iz] = [...axes].map(a => 'lch'.indexOf(a));
     const lch = sRGBhex2lch(state.from);
     state.from = [lch[ix], lch[iy]];
     state.zval = lch[iz];
+  } else {
+    const prevFrom = [...state.from, prevZ];
+    const [ix, iy, iz] = [...axes].map(a => state.axes.indexOf(a));
+    state.from = [prevFrom[ix], prevFrom[iy]];
+    state.zval = prevFrom[iz];
   }
   if (is(String, state.to)) {
+    const [ix, iy] = [...axes].map(a => 'lch'.indexOf(a));
     const lch = sRGBhex2lch(state.to);
     state.to = [lch[ix], lch[iy]];
+  } else {
+    const prevTo = [...state.to, prevZ];
+    const [ix, iy] = [...axes].map(a => state.axes.indexOf(a));
+    state.to = [prevTo[ix], prevTo[iy]];
   }
+  state.axes = axes;
+  [state.ax, state.ay, state.az] = axes;
 
   const zdim = state.colorSpace.dimension[state.az];
   sliderAxisLabel.innerText = capitalize(zdim.name);
@@ -348,6 +368,9 @@ slider.addEventListener('input', () => {
 });
 
 select('.tab[data-view]').forEach(el => el.addEventListener('click', () => switchView(el)));
+
+select('.tab[data-axes]').forEach(el => el.addEventListener('click', () => switchAxes(el)));
+
 select('.gradient .handle').forEach(makeDraggable);
 
 select('.button.copy', 1).addEventListener('click', () => {
