@@ -78,6 +78,29 @@ function lch2sRGB(values) {
   return values;
 }
 
+// Moves an lch color into the sRGB gamut by holding the l and h steady,
+// and adjusting the c via binary-search until the color is on the sRGB boundary.
+function lch2sRGBForce(values) {
+  const lch = [...values];
+  lch2sRGB(values);
+  if (values.length < 4 || values[3] === 0) return values; // no clipped flag ys passed or color is not clipped
+
+  let hiC = lch[1];
+  let loC = 0;
+  const ε = 0.0005;
+  while (hiC - loC > ε || values[3] === 1) {
+    lch[1] = (hiC + loC) / 2;
+    values[0] = lch[0];
+    values[1] = lch[1];
+    values[2] = lch[2];
+    lch2sRGB(values);
+    if (values[3] === 0) loC = lch[1];
+    else hiC = lch[1];
+  }
+  values[3] = 1; // clipped flag
+  return values;
+}
+
 // Convert sRGB to LCH
 function sRGB2lch(values) {
   // convert an array of sRGB values in the range 0.0 - 1.0
@@ -147,28 +170,24 @@ function sRGBfloat2int(rgb, buf) {
   buf[2] = rgb[2] * 255 + 0.5;
 }
 
-// Convert "#rrggbb" sRGB color to LCH
-function sRGBhex2lch(hex) {
-  return sRGB2lch(hex2rgb());
-
-  function hex2rgb() {
-    const result = [0, 0, 0];
-    if (!hex.match(/^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)) return result;
-    // remove optional leading #
-    if (hex.length === 4 || hex.length === 7) {
-      hex = hex.substr(1);
-    }
-    // expand short-notation to full six-digit
-    if (hex.length === 3) {
-      hex = hex.split('');
-      hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-    }
-    const num = parseInt(hex, 16);
-    result[0] = (num >> 16) / 255;
-    result[1] = ((num >> 8) & 0xff) / 255;
-    result[2] = (num & 0xff) / 255;
-    return result;
+// Convert "#rrggbb" color to float sRGB
+function hex2sRGB(hex) {
+  const result = [0, 0, 0];
+  if (!hex.match(/^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)) return result;
+  // remove optional leading #
+  if (hex.length === 4 || hex.length === 7) {
+    hex = hex.substr(1);
   }
+  // expand short-notation to full six-digit
+  if (hex.length === 3) {
+    hex = hex.split('');
+    hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+  }
+  const num = parseInt(hex, 16);
+  result[0] = (num >> 16) / 255;
+  result[1] = ((num >> 8) & 0xff) / 255;
+  result[2] = (num & 0xff) / 255;
+  return result;
 }
 
-if (typeof module === 'object' && module.exports) module.exports = { lch2sRGB, sRGB2lch, sRGBfloat2int, sRGBhex2lch };
+if (typeof module === 'object' && module.exports) module.exports = { lch2sRGB, lch2sRGBForce, sRGB2lch, sRGBfloat2int, hex2sRGB };

@@ -32,6 +32,7 @@
   --swatches-color: #303030;
   --swatch-width: 40px;
   --swatch-height: 30px;
+  --swatch-clipped-color: #ff5a52;
 
   /* canvas */
   --canvas-size: 420px;
@@ -257,9 +258,24 @@ input[type="range"]:focus::-moz-range-thumb {
   border-radius: 50%;
 }
 
-.widget .canvas .gradient svg line,
-.widget .canvas .gradient svg circle {
+.widget .canvas .gradient svg line {
   stroke: rgba(255, 255, 255, 0.25);
+}
+
+.widget .canvas .gradient svg circle {
+  stroke: rgba(255, 255, 255, 0.5);
+}
+
+.widget .gradient .handle.clipped {
+  border-color: var(--swatch-clipped-color);
+}
+
+.widget .canvas .gradient svg circle.clipped {
+  stroke: var(--swatch-clipped-color);
+}
+
+.widget .swatches label.clipped {
+  color: var(--swatch-clipped-color);
 }
 
 .widget .cp {

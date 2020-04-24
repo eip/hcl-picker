@@ -1,4 +1,4 @@
-/* global lch2sRGB, sRGBfloat2int, sRGBhex2lch */
+/* global lch2sRGB, lch2sRGBForce, sRGB2lch, sRGBfloat2int, hex2sRGB */
 
 'use strict';
 
@@ -198,12 +198,12 @@ function posUnscale(val, { min, max }) {
 }
 
 function getColor([x, y]) {
-  floatColor[state.dimX.index] = x;
-  floatColor[state.dimY.index] = y;
-  floatColor[state.dimZ.index] = state.zval;
-  lch2sRGB(floatColor);
-  sRGBfloat2int(floatColor, coloredPixel);
-  return `#${hex(coloredPixel[0])}${hex(coloredPixel[1])}${hex(coloredPixel[2])}`;
+  floatColorClipped[state.dimX.index] = x;
+  floatColorClipped[state.dimY.index] = y;
+  floatColorClipped[state.dimZ.index] = state.zval;
+  lch2sRGBForce(floatColorClipped);
+  sRGBfloat2int(floatColorClipped, coloredPixel);
+  return { value: `#${hex(coloredPixel[0])}${hex(coloredPixel[1])}${hex(coloredPixel[2])}`, clipped: !!floatColorClipped[3] };
 
   function hex(num) {
     const result = num.toString(16);
@@ -224,7 +224,11 @@ function updateColors() {
   state.colors.length = state.steps;
   state.colors[0] = getColor(state.from);
   state.colors[state.steps - 1] = getColor(state.to);
-  select('.gradient .handle').forEach(e => (e.style.backgroundColor = state.colors[e.dataset.key === 'from' ? 0 : state.steps - 1]));
+  select('.gradient .handle').forEach(e => {
+    const color = state.colors[e.dataset.key === 'from' ? 0 : state.steps - 1];
+    e.style.backgroundColor = color.value;
+    e.classList[color.clipped ? 'add' : 'remove']('clipped');
+  });
   const line = select('.gradient svg[data-key=line] line', 1);
   const offset = handleSize / 2;
   line.setAttributeNS(null, 'x1', posScale(state.from[0], state.dimX, offset));
@@ -272,10 +276,12 @@ function updateColors() {
       state.colors[i] = getColor([x, y]);
       spots[i - 1].setAttributeNS(null, 'cx', posScale(x, state.dimX, offset));
       spots[i - 1].setAttributeNS(null, 'cy', posScale(y, state.dimY, offset));
-      spots[i - 1].style.fill = state.colors[i];
+      spots[i - 1].style.fill = state.colors[i].value;
+      spots[i - 1].classList[state.colors[i].clipped ? 'add' : 'remove']('clipped');
     }
-    swatches[i].style.backgroundColor = state.colors[i];
-    labels[i].innerText = state.colors[i];
+    swatches[i].style.backgroundColor = state.colors[i].value;
+    labels[i].innerText = state.colors[i].value;
+    labels[i].classList[state.colors[i].clipped ? 'add' : 'remove']('clipped');
   }
   if (locationTimer) clearTimeout(locationTimer);
   locationTimer = setTimeout(() => {
@@ -292,7 +298,7 @@ function updateAxes(axes) {
   state.dimZ = state.colorSpace.dimension[axes[2]];
   const [ix, iy, iz] = [...axes].map(a => state.axes.indexOf(a));
   if (is(String, state.from)) {
-    const lch = sRGBhex2lch(state.from);
+    const lch = sRGB2lch(hex2sRGB(state.from));
     state.from = [lch[state.dimX.index], lch[state.dimY.index]];
     state.zval = lch[state.dimZ.index];
   } else {
@@ -301,7 +307,7 @@ function updateAxes(axes) {
     state.zval = prevFrom[iz];
   }
   if (is(String, state.to)) {
-    const lch = sRGBhex2lch(state.to);
+    const lch = sRGB2lch(hex2sRGB(state.to));
     state.to = [lch[state.dimX.index], lch[state.dimY.index]];
   } else {
     const prevTo = [...state.to, prevZ];
@@ -333,7 +339,7 @@ function updateStateFromLocation() {
 }
 
 function updateLocation() {
-  window.location.hash = `#${state.axes}/${state.steps}/${state.colors[0].slice(1)}/${state.colors[state.colors.length - 1].slice(1)}`;
+  window.location.hash = `#${state.axes}/${state.steps}/${state.colors[0].value.slice(1)}/${state.colors[state.colors.length - 1].value.slice(1)}`;
 }
 
 function init() {
@@ -391,7 +397,7 @@ select('.gradient .handle').forEach(makeDraggable);
 
 select('.button.copy', 1).addEventListener('click', () => {
   const clipboard = select('#clipboard');
-  clipboard.value = state.colors.join(', ');
+  clipboard.value = state.colors.map(c => c.value).join(', ');
   clipboard.select();
   document.execCommand('copy');
 });
