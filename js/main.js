@@ -120,8 +120,8 @@ function makeDraggable(element) {
 
     const x = limitPos(elementPos.x);
     const y = limitPos(elementPos.y);
-    state[key][0] = posUnscale(x, state.colorSpace.dimension[state.ax]);
-    state[key][1] = posUnscale(y, state.colorSpace.dimension[state.ay]);
+    state[key][0] = posUnscale(x, state.dimX);
+    state[key][1] = posUnscale(y, state.dimY);
     element.style.left = `${x}px`;
     element.style.top = `${y}px`;
     updateColors();
@@ -157,13 +157,12 @@ function renderColorSpace() {
   }
 
   function doRender() {
-    const [ix, iy, iz] = [...state.axes].map(a => 'lch'.indexOf(a));
-    const {
-      [state.ax]: { min: xmin, max: xmax },
-      [state.ay]: { min: ymin, max: ymax }
-    } = state.colorSpace.dimension;
+    const { index: ix, min: xmin, max: xmax } = state.dimX;
+    const { index: iy, min: ymin, max: ymax } = state.dimY;
+    const { index: iz } = state.dimZ;
 
-    if (state.debug) state.renderStart = performance.now();
+    let startTime = 0;
+    if (state.debug) startTime = performance.now();
     const { width, height } = colorSpace;
     for (let x = 0; x < width; x++) {
       const xv = xmin + (x * (xmax - xmin)) / width;
@@ -182,7 +181,7 @@ function renderColorSpace() {
         imgData.data.set(pixel, idx);
       }
     }
-    if (state.debug) state.renderTime = performance.now() - state.renderStart;
+    if (state.debug) state.renderTime = performance.now() - startTime;
     colorSpaceCtx.putImageData(imgData, 0, 0);
     updateColors();
   }
@@ -197,10 +196,9 @@ function posUnscale(val, { min, max }) {
 }
 
 function getColor([x, y]) {
-  const [ix, iy, iz] = [...state.axes].map(a => 'lch'.indexOf(a));
-  floatColor[ix] = x;
-  floatColor[iy] = y;
-  floatColor[iz] = state.zval;
+  floatColor[state.dimX.index] = x;
+  floatColor[state.dimY.index] = y;
+  floatColor[state.dimZ.index] = state.zval;
   lch2sRGB(floatColor);
   sRGBfloat2int(floatColor, coloredPixel);
   return `#${hex(coloredPixel[0])}${hex(coloredPixel[1])}${hex(coloredPixel[2])}`;
@@ -212,13 +210,11 @@ function getColor([x, y]) {
 }
 
 function positionHandles() {
-  const xdim = state.colorSpace.dimension[state.ax];
-  const ydim = state.colorSpace.dimension[state.ay];
   const [handleFrom, handleTo] = select('.gradient .handle');
-  handleFrom.style.left = `${posScale(state.from[0], xdim)}px`;
-  handleFrom.style.top = `${posScale(state.from[1], ydim)}px`;
-  handleTo.style.left = `${posScale(state.to[0], xdim)}px`;
-  handleTo.style.top = `${posScale(state.to[1], ydim)}px`;
+  handleFrom.style.left = `${posScale(state.from[0], state.dimX)}px`;
+  handleFrom.style.top = `${posScale(state.from[1], state.dimY)}px`;
+  handleTo.style.left = `${posScale(state.to[0], state.dimX)}px`;
+  handleTo.style.top = `${posScale(state.to[1], state.dimY)}px`;
 }
 
 function updateColors() {
@@ -227,14 +223,12 @@ function updateColors() {
   state.colors[0] = getColor(state.from);
   state.colors[state.steps - 1] = getColor(state.to);
   select('.gradient .handle').forEach(e => (e.style.backgroundColor = state.colors[e.dataset.key === 'from' ? 0 : state.steps - 1]));
-  const xdim = state.colorSpace.dimension[state.ax];
-  const ydim = state.colorSpace.dimension[state.ay];
   const line = select('.gradient svg[data-key=line] line', 1);
   const offset = handleSize / 2;
-  line.setAttributeNS(null, 'x1', posScale(state.from[0], xdim, offset));
-  line.setAttributeNS(null, 'y1', posScale(state.from[1], ydim, offset));
-  line.setAttributeNS(null, 'x2', posScale(state.to[0], xdim, offset));
-  line.setAttributeNS(null, 'y2', posScale(state.to[1], ydim, offset));
+  line.setAttributeNS(null, 'x1', posScale(state.from[0], state.dimX, offset));
+  line.setAttributeNS(null, 'y1', posScale(state.from[1], state.dimY, offset));
+  line.setAttributeNS(null, 'x2', posScale(state.to[0], state.dimX, offset));
+  line.setAttributeNS(null, 'y2', posScale(state.to[1], state.dimY, offset));
   const spots = select('.gradient svg[data-key=swatches] circle');
   if (spots.length > state.steps - 2) {
     for (let i = state.steps - 2; i < spots.length; ++i) spots[i].remove();
@@ -274,8 +268,8 @@ function updateColors() {
       const x = state.from[0] + ((state.to[0] - state.from[0]) * i) / (state.steps - 1);
       const y = state.from[1] + ((state.to[1] - state.from[1]) * i) / (state.steps - 1);
       state.colors[i] = getColor([x, y]);
-      spots[i - 1].setAttributeNS(null, 'cx', posScale(x, xdim, offset));
-      spots[i - 1].setAttributeNS(null, 'cy', posScale(y, ydim, offset));
+      spots[i - 1].setAttributeNS(null, 'cx', posScale(x, state.dimX, offset));
+      spots[i - 1].setAttributeNS(null, 'cy', posScale(y, state.dimY, offset));
       spots[i - 1].style.fill = state.colors[i];
     }
     swatches[i].style.backgroundColor = state.colors[i];
@@ -286,37 +280,35 @@ function updateColors() {
 function updateAxes(axes) {
   if (state.axes === axes && is(Array, state.from) && is(Array, state.to)) return;
   const prevZ = state.zval;
+  state.dimX = state.colorSpace.dimension[axes[0]];
+  state.dimY = state.colorSpace.dimension[axes[1]];
+  state.dimZ = state.colorSpace.dimension[axes[2]];
+  const [ix, iy, iz] = [...axes].map(a => state.axes.indexOf(a));
   if (is(String, state.from)) {
-    const [ix, iy, iz] = [...axes].map(a => 'lch'.indexOf(a));
     const lch = sRGBhex2lch(state.from);
-    state.from = [lch[ix], lch[iy]];
-    state.zval = lch[iz];
+    state.from = [lch[state.dimX.index], lch[state.dimY.index]];
+    state.zval = lch[state.dimZ.index];
   } else {
     const prevFrom = [...state.from, prevZ];
-    const [ix, iy, iz] = [...axes].map(a => state.axes.indexOf(a));
     state.from = [prevFrom[ix], prevFrom[iy]];
     state.zval = prevFrom[iz];
   }
   if (is(String, state.to)) {
-    const [ix, iy] = [...axes].map(a => 'lch'.indexOf(a));
     const lch = sRGBhex2lch(state.to);
-    state.to = [lch[ix], lch[iy]];
+    state.to = [lch[state.dimX.index], lch[state.dimY.index]];
   } else {
     const prevTo = [...state.to, prevZ];
-    const [ix, iy] = [...axes].map(a => state.axes.indexOf(a));
     state.to = [prevTo[ix], prevTo[iy]];
   }
   state.axes = axes;
-  [state.ax, state.ay, state.az] = axes;
 
-  const zdim = state.colorSpace.dimension[state.az];
-  sliderAxisLabel.innerText = capitalize(zdim.name);
-  slider.min = zdim.min;
-  slider.max = zdim.max;
-  slider.step = zdim.step / 1000;
+  sliderAxisLabel.innerText = capitalize(state.dimZ.name);
+  slider.min = state.dimZ.min;
+  slider.max = state.dimZ.max;
+  slider.step = state.dimZ.step / 1000;
   slider.value = state.zval.toFixed(Math.round(-Math.log10(slider.step)));
   slider.dispatchEvent(new InputEvent('input'));
-  slider.step = zdim.step;
+  slider.step = state.dimZ.step;
   positionHandles();
   updateColors();
 }
