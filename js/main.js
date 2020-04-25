@@ -123,7 +123,7 @@ function makeDraggable(element) {
     const x = limitPos(elementPos.x);
     const y = limitPos(elementPos.y);
     state[key][0] = posUnscale(x, state.dimX);
-    state[key][1] = posUnscale(y, state.dimY);
+    state[key][1] = posUnscale(y, state.dimY, true);
     element.style.left = `${x}px`;
     element.style.top = `${y}px`;
     updateColors();
@@ -170,7 +170,7 @@ function renderColorSpace() {
       const xv = xmin + (x * (xmax - xmin)) / width;
       for (let y = 0; y < height; y++) {
         const yv = ymin + (y * (ymax - ymin)) / height;
-        const idx = (x + y * width) * 4;
+        const idx = (x + (height - y - 1) * width) * 4;
         floatColorClipped[ix] = xv;
         floatColorClipped[iy] = yv;
         floatColorClipped[iz] = zv;
@@ -189,12 +189,12 @@ function renderColorSpace() {
   }
 }
 
-function posScale(val, { min, max }, offset = 0) {
-  return ((val - min) * canvasSize) / (max - min) + offset;
+function posScale(val, { min, max }, offset = 0, flip = false) {
+  return (flip ? canvasSize - ((val - min) * canvasSize) / (max - min) : ((val - min) * canvasSize) / (max - min)) + offset;
 }
 
-function posUnscale(val, { min, max }) {
-  return (val * (max - min)) / canvasSize + min;
+function posUnscale(val, { min, max }, flip = false) {
+  return ((flip ? canvasSize - val : val) * (max - min)) / canvasSize + min;
 }
 
 function getColor([x, y]) {
@@ -214,9 +214,9 @@ function getColor([x, y]) {
 function positionHandles() {
   const [handleFrom, handleTo] = select('.gradient .handle');
   handleFrom.style.left = `${posScale(state.from[0], state.dimX)}px`;
-  handleFrom.style.top = `${posScale(state.from[1], state.dimY)}px`;
+  handleFrom.style.top = `${posScale(state.from[1], state.dimY, 0, true)}px`;
   handleTo.style.left = `${posScale(state.to[0], state.dimX)}px`;
-  handleTo.style.top = `${posScale(state.to[1], state.dimY)}px`;
+  handleTo.style.top = `${posScale(state.to[1], state.dimY, 0, true)}px`;
 }
 
 function updateColors() {
@@ -232,9 +232,9 @@ function updateColors() {
   const line = select('.gradient svg[data-key=line] line', 1);
   const offset = handleSize / 2;
   line.setAttributeNS(null, 'x1', posScale(state.from[0], state.dimX, offset));
-  line.setAttributeNS(null, 'y1', posScale(state.from[1], state.dimY, offset));
+  line.setAttributeNS(null, 'y1', posScale(state.from[1], state.dimY, offset, true));
   line.setAttributeNS(null, 'x2', posScale(state.to[0], state.dimX, offset));
-  line.setAttributeNS(null, 'y2', posScale(state.to[1], state.dimY, offset));
+  line.setAttributeNS(null, 'y2', posScale(state.to[1], state.dimY, offset, true));
   const spots = select('.gradient svg[data-key=swatches] circle');
   if (spots.length > state.steps - 2) {
     for (let i = state.steps - 2; i < spots.length; ++i) spots[i].remove();
@@ -275,7 +275,7 @@ function updateColors() {
       const y = state.from[1] + ((state.to[1] - state.from[1]) * i) / (state.steps - 1);
       state.colors[i] = getColor([x, y]);
       spots[i - 1].setAttributeNS(null, 'cx', posScale(x, state.dimX, offset));
-      spots[i - 1].setAttributeNS(null, 'cy', posScale(y, state.dimY, offset));
+      spots[i - 1].setAttributeNS(null, 'cy', posScale(y, state.dimY, offset, true));
       spots[i - 1].style.fill = state.colors[i].value;
       spots[i - 1].classList[state.colors[i].clipped ? 'add' : 'remove']('clipped');
     }
