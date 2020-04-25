@@ -13,8 +13,7 @@ const state = {
   axes: 'hlc',
   from: '#c76584',
   to: '#30c2f8',
-  steps: 5,
-  debug: true
+  steps: 5
 };
 
 const docStyle = getComputedStyle(document.body);
