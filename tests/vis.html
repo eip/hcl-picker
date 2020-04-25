@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+
+    <title>Visualization</title>
+    <meta name="author" content="eip" />
+    <style>
+      #vis path {
+        stroke: #2c2c2c;
+        stroke-width: 0.25px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="vis"></div>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script>
+      const vis = d3.select("#vis");
+      const path = d3.geoPath().projection(d3.geoAlbersUsa().scale(740).translate([281, 220]));
+      const svg = vis.append("svg:svg").attr("width", 562).attr("height", 460);
+      const states = svg.append("svg:g").attr("id", "states");
+      function choropleth(colors) {
+        const pad = d3.format("05d");
+        d3.json("data/us-states.json").then(json => {
+          states
+            .selectAll("path")
+            .data(json.features)
+            .enter()
+            .append("svg:path")
+            .attr("style", d => `fill:${colors[(Math.random() * colors.length) | 0]};`)
+            .attr("d", path);
+          d3.select("#visualization").classed("loading", false);
+        });
+      }
+      choropleth(["#fa81a1", "#c1a449", "#1fbd8f", "#0fb3f9", "#dd89d9"]);
+    </script>
+  </body>
+</html>
