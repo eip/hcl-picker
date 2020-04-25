@@ -40,7 +40,6 @@ clippedPixel.set([255, 0, 0, 0]);
 const coloredPixel = new Uint8Array(new ArrayBuffer(4));
 coloredPixel.set([0, 0, 0, 255]);
 const floatColorClipped = [0.0, 0.0, 0.0, 0];
-const floatColor = [0.0, 0.0, 0.0];
 let imgData;
 let locationTimer = null;
 
@@ -83,6 +82,7 @@ function switchView(tab) {
   select('.tab[data-view]').forEach(deactivate);
   activate(tab);
   select(`*[data-owner=${tab.dataset.view}]`).forEach(show);
+  if (tab.dataset.view === 'visualized') colorMap();
 }
 
 function switchAxes(tab) {
@@ -340,6 +340,10 @@ function updateStateFromLocation() {
 
 function updateLocation() {
   window.location.hash = `#${state.axes}/${state.steps}/${state.colors[0].value.slice(1)}/${state.colors[state.colors.length - 1].value.slice(1)}`;
+}
+
+function colorMap() {
+  select('.widget .map path').forEach((p, i) => (p.style.fill = state.colors[i % state.colors.length].value));
 }
 
 function init() {
