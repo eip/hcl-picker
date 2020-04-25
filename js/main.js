@@ -24,9 +24,6 @@ const gradientSize = canvasSize + handleSize;
 const colorSpace = select('#color-space');
 const colorSpaceCtx = colorSpace.getContext('2d');
 const slider = select('#slider');
-const sliderStep = slider.step;
-const sliderStepCoarse = sliderStep * 10;
-const sliderStepFine = sliderStep / 10;
 const sliderAxisLabel = select('#slider-axis');
 const sliderValueLabel = select('#slider-value');
 const debugInfo = select('#debug-info');
@@ -359,15 +356,15 @@ function init() {
 window.addEventListener('load', init);
 
 document.addEventListener('keydown', e => {
-  if (slider.step !== sliderStep) return;
+  if (+slider.step !== state.dimZ.step) return;
   if (!['AltLeft', 'AltRight', 'ShiftLeft', 'ShiftRight'].includes(e.code)) return;
-  slider.step = e.code.startsWith('Alt') ? sliderStepFine : sliderStepCoarse;
+  slider.step = e.code.startsWith('Alt') ? state.dimZ.step / 10 : state.dimZ.step * 10;
 });
 
 document.addEventListener('keyup', e => {
-  if (slider.step === sliderStep) return;
+  if (+slider.step === state.dimZ.step) return;
   if (!['AltLeft', 'AltRight', 'ShiftLeft', 'ShiftRight'].includes(e.code)) return;
-  slider.step = sliderStep;
+  slider.step = state.dimZ.step;
 });
 
 slider.addEventListener('click', () => {
