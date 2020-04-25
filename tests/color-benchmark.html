@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+
+    <title>Color Conversion Benchmark</title>
+    <meta name="description" content="Color Conversion Benchmark" />
+    <meta name="author" content="eip" />
+    <style>
+      :root {
+        --main-font: 13px -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif; /* stylelint-disable-line value-keyword-case */
+        --canvas-size: 420px;
+        --widget-width: calc(var(--canvas-size) * 1.5);
+      }
+
+      body,
+      button,
+      input,
+      select {
+        font: var(--main-font);
+      }
+
+      .widget {
+        display: flex;
+        flex-direction: column;
+        width: var(--widget-width);
+      }
+
+      .widget .header {
+        display: flex;
+        align-items: center;
+      }
+
+      .widget canvas {
+        width: var(--canvas-size);
+        height: var(--canvas-size);
+        margin: 2em auto;
+      }
+
+      .widget .footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="widget">
+      <div class="header">
+        <label for="library">Color conversion library:&nbsp;</label>
+        <select id="library">
+          <option value="internal">Internal</option>
+          <option value="chromaJs">Chroma.js</option>
+          <option value="cssColor4">CSS Color 4 sample</option>
+        </select>
+        <input id="loRes" type="checkbox" />
+        <label for="loRes">Lo-res</label>
+        <input id="clipped" type="checkbox" checked />
+        <label for="clipped">Hide clipped colors</label>
+      </div>
+      <canvas id="color-space"></canvas>
+      <div class="footer">
+        <button id="test" disabled onclick="start(true)">Start Benchmark</button>
+        <p id="status"></p>
+      </div>
+    </div>
+    <script src="../js/color.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.1.0/chroma.min.js"
+      integrity="sha256-gX8uuyxN8stSMHWO9arnnKyenTOALaVAcVB3b6P87e4="
+      crossorigin="anonymous"
+    ></script>
+    <script src="./js/multiply-matrices.js"></script>
+    <script src="./js/conversions.js"></script>
+    <script src="./js/utilities.js"></script>
+    <script>
+      "use strict";
+
+      const librarySelect = document.getElementById("library");
+      const loResCheckbox = document.getElementById("loRes");
+      const clippedCheckbox = document.getElementById("clipped");
+      const testButton = document.getElementById("test");
+      const isSafari = navigator.vendor.toLowerCase().startsWith('apple');
+      const colorSpace = document.getElementById("color-space");
+      let scale = 1;
+      const canvasSize = colorSpace.offsetWidth;
+      let csWidth = canvasSize / scale;
+      let csHeight = canvasSize / scale;
+      colorSpace.width = csWidth;
+      colorSpace.height = csHeight;
+      const colorSpaceCtx = colorSpace.getContext("2d");
+      const status = document.getElementById("status");
+      const maxLum = 100;
+      const maxChroma = 132;
+      const maxHue = 360;
+
+      const clippedPixel = new Uint8Array(new ArrayBuffer(4));
+      const coloredPixel = new Uint8Array(new ArrayBuffer(4));
+      clippedPixel.set([255, 0, 0, 0]);
+      coloredPixel.set([0, 0, 0, 255]);
+      const rgbColor = [0, 0, 0];
+      const rgbColorClipped = [0, 0, 0, 0];
+
+      let chromaVal = 0;
+      let step = 1;
+      let frame = 0;
+      let running = false;
+
+      if (isSafari) librarySelect.style.fontSize = '1.2em';
+      let imgData = colorSpaceCtx.createImageData(csWidth, csHeight);
+      const render = { internal: renderInternal, chromaJs: renderChromaJs, cssColor4: renderCssColor4 };
+
+      const bench = {
+        times: Array(maxChroma + 1),
+        reset: function () {
+          this.lastCalcTime = 0;
+          this.times.fill(0);
+        }
+      };
+
+      function renderInternal(zv) {
+        const colorBuf = clippedCheckbox.checked ? rgbColorClipped : rgbColor;
+        for (let x = 0; x < csWidth; x++) {
+          const xv = (x * maxHue) / csWidth;
+          for (let y = 0; y < csHeight; y++) {
+            const yv = (y * maxLum) / csHeight;
+            const idx = (x + y * csWidth) * 4;
+            colorBuf[0] = yv;
+            colorBuf[1] = zv;
+            colorBuf[2] = xv;
+            let pixel = clippedPixel;
+            lch2sRGB(colorBuf);
+            if (colorBuf[3] !== 1) {
+              pixel = coloredPixel;
+              sRGBfloat2int(colorBuf, pixel);
+            }
+            imgData.data.set(pixel, idx);
+          }
+        }
+        colorSpaceCtx.putImageData(imgData, 0, 0);
+      }
+
+      function renderChromaJs(zv) {
+        const colorBuf = rgbColor;
+        const hideClipped = clippedCheckbox.checked;
+        for (let x = 0; x < csWidth; x++) {
+          const xv = (x * maxHue) / csWidth;
+          for (let y = 0; y < csHeight; y++) {
+            const yv = (y * maxLum) / csHeight;
+            const idx = (x + y * csWidth) * 4;
+            colorBuf[0] = xv;
+            colorBuf[1] = zv;
+            colorBuf[2] = yv;
+            const color = chroma.hcl(colorBuf);
+            if (hideClipped && color.clipped()) {
+              imgData.data.set(clippedPixel, idx);
+            } else {
+              const rgb = color.rgb();
+              coloredPixel[0] = rgb[0];
+              coloredPixel[1] = rgb[1];
+              coloredPixel[2] = rgb[2];
+              imgData.data.set(coloredPixel, idx);
+            }
+          }
+        }
+        colorSpaceCtx.putImageData(imgData, 0, 0);
+      }
+
+      function renderCssColor4(zv) {
+        const colorBuf = rgbColor;
+        const hideClipped = clippedCheckbox.checked;
+        for (let x = 0; x < csWidth; x++) {
+          const xv = (x * maxHue) / csWidth;
+          for (let y = 0; y < csHeight; y++) {
+            const yv = (y * maxLum) / csHeight;
+            const idx = (x + y * csWidth) * 4;
+            colorBuf[0] = yv;
+            colorBuf[1] = zv;
+            colorBuf[2] = xv;
+            const rgb = LCH_to_sRGB(colorBuf);
+            const ε = 0.000005;
+            let clipped = false;
+            for (let i = 0; i < 3; ++i) {
+              if (rgb[i] < 0 - ε) {
+                rgb[i] = 0;
+                clipped = true;
+              } else if (rgb[i] > 1 + ε) {
+                rgb[i] = 1;
+                clipped = true;
+              }
+            }
+            if (hideClipped && clipped) {
+              imgData.data.set(clippedPixel, idx);
+            } else {
+              sRGBfloat2int(rgb, coloredPixel);
+              imgData.data.set(coloredPixel, idx);
+            }
+          }
+        }
+        colorSpaceCtx.putImageData(imgData, 0, 0);
+      }
+
+      function start(pause) {
+        if (pause === true) {
+          running = !running;
+          testButton.innerText = `${running ? "Stop" : "Start"} Benchmark`;
+        }
+        const newScale = loResCheckbox.checked ? 2 : 1;
+        if (newScale !== scale) {
+          scale = newScale;
+          csWidth = csHeight = canvasSize / scale;
+          colorSpace.width = csWidth;
+          colorSpace.height = csHeight;
+          imgData = colorSpaceCtx.createImageData(csWidth, csHeight);
+          bench.reset();
+        }
+        if (bench.lib !== librarySelect.value) {
+          bench.lib = librarySelect.value;
+          bench.reset();
+        }
+        const startTime = performance.now();
+        render[librarySelect.value](chromaVal);
+        const endTime = performance.now();
+
+        if (!bench.lastCalcTime) bench.lastCalcTime = endTime;
+        bench.times[frame] = endTime - startTime;
+        if (bench.lastCalcTime && endTime - bench.lastCalcTime >= 500) {
+          bench.lastCalcTime = endTime;
+          let minTime = 1000000;
+          let maxTime = 0;
+          let avgTime = 0;
+          let sumTime = 0;
+          let frameCount = 0;
+          for (let i = 0; i <= maxChroma; i++) {
+            const p = bench.times[(frame - i + maxChroma + 1) % (maxChroma + 1)];
+            if (avgTime === 0 && (frameCount >= 10 || i === maxChroma)) avgTime = sumTime / frameCount;
+            if (!p) continue;
+            if (p < minTime) minTime = p;
+            if (p > maxTime) maxTime = p;
+            sumTime += p;
+            frameCount++;
+          }
+          if (avgTime === 0) avgTime = sumTime / frameCount;
+          status.innerText = `Render time: ${avgTime.toFixed(1)} ms (min: ${minTime.toFixed(1)} ms, max: ${maxTime.toFixed(1)} ms)`;
+        }
+
+        chromaVal += step;
+        frame = (frame + 1) % (maxChroma + 1);
+        if (chromaVal <= 0 || chromaVal >= maxChroma) step = -step;
+        if (!running) {
+          bench.reset();
+          return;
+        }
+        window.requestAnimationFrame(start);
+      }
+
+      window.addEventListener("load", () => (testButton.disabled = false));
+    </script>
+  </body>
+</html>
