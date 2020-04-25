@@ -352,7 +352,9 @@ function init() {
     e.setAttributeNS(null, 'width', gradientSize);
     e.setAttributeNS(null, 'height', gradientSize);
   });
-  updateAxes(state.axes);
+  const tab = select(`.tab[data-axes=${state.axes}]`, 1);
+  if (!isActive(tab)) switchAxes(tab);
+  else updateAxes(state.axes);
 }
 
 window.addEventListener('load', init);
