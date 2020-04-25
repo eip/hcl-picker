@@ -11,8 +11,8 @@ const state = {
     }
   },
   axes: 'hlc',
-  from: '#c76584',
-  to: '#30c2f8',
+  from: '#ec80a1',
+  to: '#08b1e6',
   steps: 5
 };
 
