@@ -1,5 +1,5 @@
 env:
-  node: true
+  browser: true
 parserOptions:
   sourceType: script
 extends: 'airbnb-base'
