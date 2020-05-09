@@ -117,6 +117,16 @@ input[type="range"]:focus::-moz-range-thumb {
   visibility: hidden;
 }
 
+.visually-hidden {
+  position: absolute;
+  clip: rect(0 0 0 0);
+  width: 1px;
+  height: 1px;
+  border: none;
+  padding: 0;
+  margin: -1px;
+}
+
 .widget {
   display: grid;
   grid-template-areas:
@@ -318,11 +328,6 @@ input[type="range"]:focus::-moz-range-thumb {
   grid-area: di;
   align-self: end;
   text-align: right;
-}
-
-#clipboard {
-  position: fixed;
-  top: -100px;
 }
 
 .widget .map {

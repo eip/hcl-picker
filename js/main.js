@@ -398,10 +398,14 @@ select('.tab[data-axes]').forEach(el => el.addEventListener('click', () => switc
 select('.gradient .handle').forEach(makeDraggable);
 
 select('.button.copy', 1).addEventListener('click', () => {
+  const focused = document.activeElement;
   const clipboard = select('#clipboard');
+  show(clipboard);
   clipboard.value = state.colors.map(c => c.value).join(', ');
   clipboard.select();
   document.execCommand('copy');
+  if (focused && focused.focus) focused.focus();
+  hide(clipboard);
 });
 
 select('.button.minus', 1).addEventListener('click', () => {
